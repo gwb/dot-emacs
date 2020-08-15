@@ -1,0 +1,15 @@
+# key: <read
+# name: read-note
+# --
+* [$5] ${1:authors} (${2:year})
+- Reading time:
+- Title: ${3:title}
+- Keywords: ${4:keywords}
+- Mnemonic: ${5:mnemonic}
+- Dataset link: ${6:dataset}
+- Problem they are trying to solve:
+  $7
+- Similar / related papers: ${8:related}
+- Summary: ${10:summary}
+- Open problems: ${9:open}
+- Bibtex reference: $0

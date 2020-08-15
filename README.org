@@ -1,0 +1,524 @@
+
+
+
+* Interface tweaks
+** Remove frills from interface + some customizations
+#+BEGIN_SRC emacs-lisp
+  (tool-bar-mode -1)
+  (menu-bar-mode -1)
+  (fset 'yes-or-no-p 'y-or-n-p)
+  (toggle-scroll-bar -1)
+  (setq inhibit-startup-screen t)
+  (set-fill-column 80)
+#+END_SRC
+
+** Some better defaults
+
+#+BEGIN_SRC emacs-lisp
+(set-fill-column 80)
+(setq uniquify-buffer-name-style 'forward)
+(show-paren-mode)
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+(setq eshell-cmpl-ignore-case t) ;; ignore case when completing filename
+#+END_SRC
+
+** Theming
+  Most frequently used themes are:
+    + 'monokai (works both on GUI and Terminal)
+    + 'snazzy (works well only on GUI)
+    + 'zenburn
+  
+  To switch theme during usage:
+    + option 1: M-x load-theme RET 'snazzy (e.g.)
+        => Issue: load-theme layers themes on top of each other
+    + option 2: First disable the previous theme, then enable the new theme.
+                So, M-x disable-theme RET 'monokai (e.g.) then load as above
+
+#+BEGIN_SRC emacs-lisp
+(use-package monokai-theme :ensure t)
+(load-theme 'monokai t)
+#+END_SRC
+
+** Mouse operations for terminal
+
+Note: try to prune this down? Is all of this needed?
+
+#+BEGIN_SRC emacs-lisp
+(xterm-mouse-mode t)
+
+; Mouse wheel: scroll up/down; control-wheel for pgup/pgdn.
+(defun wheel-scroll-up   ()   (lambda () (interactive) (scroll-up 2)))
+(defun wheel-scroll-down ()   (lambda () (interactive) (scroll-down 2)))
+(defun wheel-scroll-pgup ()   (lambda () (interactive) (scroll-up 20)))
+(defun wheel-scroll-pgdown () (lambda () (interactive) (scroll-down 20)))
+
+(define-key global-map [mouse-5] (wheel-scroll-up))
+(define-key global-map [mouse-4] (wheel-scroll-down))
+(define-key global-map [C-mouse-5] (wheel-scroll-pgup))
+(define-key global-map [C-mouse-4] (wheel-scroll-pgdown))
+#+END_SRC
+
+** Special unicode input
++ Investigate: (set-default-coding-systems 'utf-8) 
+#+BEGIN_SRC emacs-lisp
+(set-language-environment "utf-8")
+#+END_SRC
+
+The following is David's special unicode input mode:
+
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path "~/.emacs.d/inputs")
+(require 'darais-input)
+#+END_SRC
+
+** Fixing basic osx related issues 
+
+Removes error when using dired
+
+#+BEGIN_SRC emacs-lisp
+(when (string= system-type "darwin")       
+  (setq dired-use-ls-dired nil))
+#+END_SRC
+
+** Loads customization file
+
+When modifying variables defined in packages, the *right* approach is to 
+use the function `custom-set-variables', *not* `setq'. See the following 
+[[https://emacs.stackexchange.com/questions/102/advantages-of-setting-variables-with-setq-instead-of-custom-el][comment]] on stackoverflow. The downside is that variables set that way 
+are then appended automatically to the init.el file, making things untidy. 
+The following dumps this "automatically generated code" in a different file 
+and loads it.
+
+#+BEGIN_SRC emacs-lisp
+  (setq-default custom-file (expand-file-name ".custom.el" user-emacs-directory))
+  (when (file-exists-p custom-file)
+    (load custom-file))
+#+END_SRC
+
+* which-key
+  Help with keybindings. 
+
+  Usage: type the beginning of a key binding and it will show possible completions 
+         in the minibuffer
+  
+#+BEGIN_SRC emacs-lisp
+    (use-package which-key
+      :ensure t 
+      :config
+      (which-key-mode))
+#+END_SRC
+
+* try
+  Allows to try a package without fully installing it.
+  
+  Usage: M-x try
+
+#+BEGIN_SRC emacs-lisp
+    (use-package try
+      :ensure t)
+#+END_SRC
+
+* Magit 
+
+#+BEGIN_SRC emacs-lisp
+  (use-package magit
+    :ensure t)
+#+END_SRC
+
+* Command-log-mode
+
+  Displays all emacs commands used during usage. Useful for debugging and learning.
+  
+  Usage:
+    + First: M-x command-log-mode
+    + Then: "C-c x l" to display log in different buffer
+
+#+BEGIN_SRC emacs-lisp
+  (use-package command-log-mode
+    :ensure t
+    :commands (command-log-mode)
+    :bind ("C-c x l" . clm/toggle-command-log-buffer))
+#+END_SRC
+
+* Projectile
+
+** Projectile mode
+
+#+begin_src emacs-lisp
+    (use-package projectile
+      :ensure t
+      :bind-keymap
+      ("C-c p" . projectile-command-map)
+      :config
+      (projectile-mode +1)
+      (setq projectile-completion-system 'ivy))
+    
+#+end_src
+
+** Counsel-projectile
+
+   + Counsel-projectile remaps some of the original projectile functions to 
+     customized `counsel-' functions. The `counsel-' version of projectile-grep 
+     does not work, so I need to make sure the remapping is cancelled (see config).
+     
+     => Two alternatives I've tried (that seem to work). Revert to one of these if issue:
+     
+        - (define-key projectile-mode-map [remap projectile-grep] 'projectile-grep)
+	  
+	  or
+
+	- (bind-key [remap projectile-grep] 'projectile-grep projectile-mode-map))
+   
+#+BEGIN_SRC emacs-lisp
+  (use-package counsel-projectile
+    :after (counsel projectile)
+    :ensure t
+    :config
+    (counsel-projectile-mode)
+    (define-key projectile-mode-map [remap projectile-grep] nil))
+#+END_SRC
+
+* Org-mode
+** Basic config
+
+Loads org-mode
+
+(some configs require org to be loaded)
+
+#+begin_src emacs-lisp
+;(require 'org)
+#+end_src
+
+Line wrap 
+
+#+begin_src emacs-lisp
+  (add-hook 'org-mode-hook
+	    (lambda ()
+	      (visual-line-mode 1)))
+#+end_src
+
+
+Basic directories
+
+#+BEGIN_SRC emacs-lisp
+(setq org-directory "~/org")
+(setq org-default-notes-file "~/org/refile.org")
+(setq org-agenda-files (quote ("~/org")))
+#+END_SRC
+
+keybindings
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-c a") 'org-agenda)
+(global-set-key (kbd "C-c b") 'org-switchb)
+(global-set-key (kbd "C-c l") 'org-store-link)
+(global-set-key (kbd "C-c i") 'org-indent-mode)
+(global-set-key (kbd "C-c c") 'org-capture)
+#+END_SRC
+
+
+Setting up custom keywords + selection
+
+#+BEGIN_SRC emacs-lisp
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "|" "DONE")
+	(sequence "IDEA(i)" "|" "IMPLEMENTED")
+	(sequence "TO-READ(r)" "|" "READ")
+	(sequence "CANCELLED(c)")))
+
+(setq org-use-fast-todo-selection t)
+#+END_SRC
+
+** Capture & Refiling
+
+org-capture templates
+
+#+BEGIN_SRC emacs-lisp
+(setq org-capture-templates
+      (quote (("t" "todo" entry (file+headline "~/org/refile.org" "Tasks")
+	       "* TODO %?\n %i\n (%U) %a")
+	      ("b" "book to read" entry (file+headline "~/org/books.org" "To read")
+	       "* TO-READ %?\n %i\n")
+	      ("i" "idea" entry (file+headline "~/org/refile.org" "Ideas")
+	       "* IDEA %?\n %i\n")
+	      ("n" "note" entry (file+headline "~/org/refile.org" "Notes")
+	       "* %? :NOTE:\n (%U) %a"))))
+#+END_SRC
+
+Refiling settings
+
+#+begin_src emacs-lisp
+(setq org-refile-targets (quote ((nil :maxlevel . 9)				 
+                                 (org-agenda-files :maxlevel . 9))))
+
+(setq org-refile-use-outline-path 'file)
+(setq org-goto-interface 'outline-path-completion)
+(setq org-outline-path-complete-in-steps nil)
+(setq org-refile-allow-creating-parent-nodes 'confirm)
+#+end_src
+
+** Babel
+
+#+BEGIN_SRC emacs-lisp
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((R . t)
+     (emacs-lisp . t)
+     (dot . t)
+     (latex . t)))
+#+END_SRC
+
+** Simple customization
+
+Batch apply operation to subtree:
+  Allows to quickly apply an action over all headlines in the active region:
+
+#+BEGIN_SRC emacs-lisp
+(setq org-loop-over-headlines-in-active-region t)
+#+END_SRC
+
+  - Comment: 
+    For instance if I want to set the same deadline for all items in my Today headline, I can put the cursor on Today then press: 
+    
+    M-h C-c C-d RET (then RET a bunch of times)
+
+    The M-h part will automatically select all the subtree, and C-c C-d will set the deadline.
+
+Auto logs
+
+#+BEGIN_SRC emacs-lisp
+(setq org-log-done t)
+#+END_SRC
+
+* Ivy / counsel
+
+#+begin_src emacs-lisp
+  (use-package counsel
+    :after ivy
+    :ensure t
+    :demand t
+    :bind (("M-x" . counsel-M-x)
+	   ("C-x C-f" . counsel-find-file)
+	   ("C-h f" . counsel-describe-function)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package ivy
+    :ensure t
+    :demand t
+    :bind (:map ivy-minibuffer-map
+		("C-j" . ivy-immediate-done)
+		("RET" . ivy-alt-done))
+    :config
+    (ivy-mode 1)
+    (setq ivy-use-virtual-buffers t)
+    (setq ivy-count-format "(%d/%d) "))
+#+end_src
+
+* Yasnippet
+#+begin_src emacs-lisp
+(use-package yasnippet
+  :ensure t
+  :init
+    (yas-global-mode 1))
+#+end_src
+
+* Programming languages
+** Misc languages
+
+#+begin_src emacs-lisp
+  (use-package julia-mode 
+    :ensure t)
+
+  (use-package racket-mode 
+    :ensure t
+    :config
+    (setq tab-always-indent 'complete)
+    (require 'racket-xp)
+    (add-hook 'racket-mode-hook #'racket-xp-mode))
+
+  (use-package slime
+    :commands slime
+    :init
+    (load (expand-file-name "~/.quicklisp/slime-helper.el"))
+    (setq inferior-lisp-program "sbcl"))
+
+  (add-to-list 'load-path "~/.emacs.d/ESS/lisp")
+  (use-package ess 
+    :config
+    (setq comint-scroll-to-bottom-on-input t)
+    (setq comint-scroll-to-bottom-on-output t)
+    (setq comint-move-point-for-output t))
+#+end_src
+
+
+** Latex
+
+
+#+begin_src emacs-lisp
+;; Reftex
+(require 'reftex)
+(add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+(setq reftex-plug-into-AUCTeX t)
+
+;; Auxtex
+(setq TeX-auto-save t)
+(setq TeX-parse-self t)
+
+;; PDF search
+(add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
+(add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+
+(setq TeX-PDF-mode t)
+(when (eq system-type 'darwin)
+  (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
+  (setq TeX-view-program-list
+'(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+  )
+
+(require 'auctex-latexmk)
+(auctex-latexmk-setup)
+(setq auctex-latexmk-inherit-TeX-PDF-mode t)
+
+;; Only change sectioning colour
+(setq font-latex-fontify-sectioning 'color)
+;; super-/sub-script on baseline
+(setq font-latex-fontify-script nil) ; might not keep this line.. I like smaller {sub/super}scripts
+(setq font-latex-script-display (quote (nil)))
+;; Do not change super-/sub-script font
+
+
+(setq font-latex-deactivated-keyword-classes
+    '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
+
+#+end_src
+
+* Custom functions
+
+My usual latex note template
+
+#+begin_src emacs-lisp
+(defun gwb/latex-note ()
+  "Inserts my `note' template, and automatically turns on latex (auctex) mode"
+  (interactive)
+  (insert-file-contents-literally "~/.emacs.d/my-latex-templates/note.tex")
+  (latex-mode))
+
+;(global-set-key (kbd "C-c x n") 'my/latex-note)
+#+end_src
+
+
+Better Occur behavior
+
+#+begin_src emacs-lisp
+(defun gwb/kill-occur-buffer-window (&rest args)
+    (delete-window (get-buffer-window "*Occur*")))
+
+(defun gwb/switch-to-occur-buffer (&rest args)
+  (select-window (get-buffer-window "*Occur*")))
+
+
+(advice-add 'occur-mode-goto-occurrence :after #'gwb/kill-occur-buffer-window)
+
+(advice-add 'occur' :after #'gwb/switch-to-occur-buffer)
+
+#+end_src
+
+Line movement
+
+#+begin_src emacs-lisp
+(defun gwb/move-beginning-of-line (arg)
+  "moves first to first non-whitespace characters. If already there moves to 
+to beginning of line"
+  (interactive "^p")
+  (setq arg (or arg 1))
+  (when (/= arg 1)
+    (let ((line-move-visual nil))
+      (forward-line (1- arg))))
+
+  (let ((orig-point (point)))
+    (back-to-indentation)
+    (when (= orig-point (point))
+      (move-beginning-of-line 1))))
+
+(global-set-key [remap move-beginning-of-line]
+                'gwb/move-beginning-of-line)
+
+#+end_src
+
+
+Goes to beginning of match after matching
+
+#+begin_src emacs-lisp
+(defun gwb/goto-other-end ()
+  "If search forward, return to beginning of match. If search backward, do 
+nothing (already goes to beginning automatically"
+  (if (< isearch-other-end (point))
+      (goto-char isearch-other-end)))
+
+(defun gwb/isearch-exit ()
+  "Modifies the isearch-exit function to return to beginning of 
+word if succesful match"
+  (interactive)
+  (if (and search-nonincremental-instead
+	   (= 0 (length isearch-string)))
+      (let ((isearch-nonincremental t))
+	(isearch-edit-string)) ;; this calls isearch-done as well
+    (isearch-done))
+  (gwb/goto-other-end)
+  (isearch-clean-overlays))
+
+
+(add-hook 'isearch-mode-hook
+	  (lambda ()
+	    (define-key isearch-mode-map "\r"
+	      'gwb/isearch-exit)))
+
+#+end_src
+
+Flipping windows
+
+#+begin_src emacs-lisp
+(defun gwb/flip-windows ()
+  "flips the buffers in split-screen windows"
+  (interactive)
+  (unless (= 2 (count-windows))
+    (error "Only works with two windows."))
+  (let ((this-buffer (window-buffer (selected-window)))
+	(alt-buffer (window-buffer (previous-window))))
+    (set-window-buffer (previous-window) this-buffer)
+    (set-window-buffer (selected-window) alt-buffer)
+    (select-window (previous-window))))
+
+#+end_src
+
+Open README.org
+
+#+begin_src emacs-lisp
+(defun gwb/edit-config ()
+  "edits README.org"
+  (interactive)
+  (find-file "~/.emacs.d/README.org"))
+
+#+end_src
+
+Copy to osx
+
+#+begin_src emacs-lisp
+(defun gwb/copy-to-osx (start end)
+  (interactive "r")
+  (shell-command-on-region start end "pbcopy"))
+#+end_src
+
+
+#+begin_src emacs-lisp
+(defvar gwb-custom-keymap nil "my keymap..")
+
+(setq gwb-custom-keymap (make-sparse-keymap))
+(global-set-key (kbd "C-c x") gwb-custom-keymap)
+
+(define-key gwb-custom-keymap (kbd "n") 'gwb/latex-note)
+(define-key gwb-custom-keymap (kbd "o") 'gwb/flip-windows)
+(define-key gwb-custom-keymap (kbd ".") 'gwb/edit-config)
+(define-key gwb-custom-keymap (kbd "w") 'gwb/copy-to-osx)
+#+end_src
