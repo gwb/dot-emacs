@@ -221,13 +221,18 @@ Setting up custom keywords + selection
 
 #+BEGIN_SRC emacs-lisp
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "|" "DONE")
+      '((sequence "TODO(t)" "|" "POSTPONED(p)" "CANCELLED(c)" "DONE(d)")
 	(sequence "IDEA(i)" "|" "IMPLEMENTED")
-	(sequence "TO-READ(r)" "|" "READ")
-	(sequence "CANCELLED(c)")))
+	(sequence "TO-READ(r)" "|" "READ")))
 
 (setq org-use-fast-todo-selection t)
 #+END_SRC
+** Archiving
+
+#+begin_src emacs-lisp
+(setq org-archive-mark-done nil)
+(setq org-archive-location "~/org/archive/%s_archive::")
+#+end_src
 
 ** Capture & Refiling
 
