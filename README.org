@@ -5,7 +5,7 @@
   (tool-bar-mode -1)
   (menu-bar-mode -1)
   (fset 'yes-or-no-p 'y-or-n-p)
-  (toggle-scroll-bar -1)
+  (toggle-scroll-bar) ;; (toggle-scroll-bar - 1)
   (setq inhibit-startup-screen t)
   (set-fill-column 80)
 #+END_SRC
@@ -13,11 +13,13 @@
 ** Some better defaults
 
 #+BEGIN_SRC emacs-lisp
-(set-fill-column 80)
-(setq uniquify-buffer-name-style 'forward)
-(show-paren-mode)
-(global-set-key (kbd "C-x C-b") 'ibuffer)
-(setq eshell-cmpl-ignore-case t) ;; ignore case when completing filename
+  (set-fill-column 80)
+  (setq uniquify-buffer-name-style 'forward)
+  (show-paren-mode)
+  (global-set-key (kbd "C-x C-b") 'ibuffer)
+  (global-set-key (kbd "M-<down>") 'scroll-other-window)
+  (global-set-key (kbd "M-<up>") 'scroll-other-window-down)
+  (setq eshell-cmpl-ignore-case t) ;; ignore case when completing filename
 #+END_SRC
 
 ** Theming and fonts
@@ -76,24 +78,26 @@ shown when emacs is started in daemon-mode (same problem as set-face-attribute)
 #+begin_src emacs-lisp
   (defun gwb/after-frame-modeline (frame)
     (if (display-graphic-p frame)
-	(progn
-	  (message "Set icons for doom modeline")
-	  ;(setq doom-modeline-icon (display-graphic-p))
-	  (setq doom-modeline-icon t)
-	  (setq doom-modeline-major-mode-icon t)
-	  (setq doom-modeline-major-mode-color-icon t))))
+        (progn
+          (message "Set icons for doom modeline")
+            ;; (setq doom-modeline-icon (display-graphic-p))
+            ;; (setq doom-modeline-icon t)
+          (setq doom-modeline-major-mode-icon t)
+          (setq doom-modeline-major-mode-color-icon t))))
 
   (use-package doom-modeline
     :ensure t
     :init (doom-modeline-mode 1)
     :config
     (setq doom-modeline-height 15)
+    (set-face-attribute 'mode-line nil :background "#323232")
+    (set-face-attribute 'mode-line-inactive nil :background "#282828")
+    (set-face-attribute 'mode-line-inactive nil :foreground "#464646")
     (add-hook 'after-make-frame-functions 'gwb/after-frame-modeline)
     (mapc 'gwb/after-frame-modeline (frame-list)))
 
 
 #+end_src
-
 
 ** Mouse operations for terminal
 
@@ -151,6 +155,72 @@ and loads it.
     (load custom-file))
 #+END_SRC
 
+* Search improvements
+Notes:
+   - You can test regexps interactively using emacs's built-in regexp builder
+     => M-x re-builder
+     
+** Visual Regexp
+#+begin_src emacs-lisp
+  (use-package visual-regexp
+    :ensure t
+    :bind (("C-c r" . 'vr/replace)
+           ("C-c q" . 'vr/query-replace)))
+#+end_src
+
+** isearch
+
+#+begin_src emacs-lisp
+  (defun gwb/region-text ()
+    (interactive)
+    (buffer-substring (region-beginning) (region-end)))
+
+  (defun gwb/isearch-yank-region ()
+    "Yanks the current active region to the isearch minibuffer.
+    The point is moved to the beginning of the region at the end of 
+    the operation, so the first match is always the current region."
+    (interactive)
+    (let ((word (gwb/region-text))
+          (end-word (region-end)))
+      (deactivate-mark)
+      (goto-char end-word)
+      (backward-word)
+      (isearch-yank-string word)))
+
+  (defun gwb/isearch-yank-word-at-point ()
+    "Yanks the word at point to the isearch minibuffer. This is 
+intended to replace the functionality of `isearch-yank-word-or-char' 
+mapped to C-s C-w, the behavior of which I don't like."
+    (interactive)
+    (let ((word (word-at-point t)))
+      (forward-word)
+      (backward-word)
+      (isearch-yank-string word)))
+
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package isearch
+    :config
+    ;; changes highlighting for active and passive matches
+    (set-face-attribute 'lazy-highlight nil :background "tan1")
+    (set-face-attribute 'isearch nil :background "SkyBlue1")
+    ;; spaces in search separate different search terms instead
+    ;; instad of being interpreted literally
+    (setq search-whitespace-regexp ".*")
+    (setq isearch-lax-whitespace t)
+    :bind
+    (:map isearch-mode-map
+          ("M-m" . gwb/isearch-yank-region)
+          ([remap isearch-yank-word-or-char] . gwb/isearch-yank-word-at-point)))
+#+end_src
+
+* File navigation
+
+#+begin_src emacs-lisp
+(setq dired-dwim-target t) ;; dired will try to get target directory when copying, etc... 
+#+end_src
+
 * Hydra
 This needs to be loaded early
 
@@ -174,6 +244,10 @@ This needs to be loaded early
 		("l" org-metaleft "promote")
 		(";" org-metaright "demote"))))
 #+end_src
+
+
+TODO: make hydras for manipulating windows
+(e.g. windmove-left, windmove-right, etc... as well as splitting, deleting, etc...)
 
 * which-key
   Help with keybindings. 
@@ -442,6 +516,11 @@ This is function will be bound to TAB in my personal keymap
 
 * Ivy / counsel
 
+Company does a lot of things:
+
+- It deals with the UI (and presumably backend) of completion in minibuffer
+- It shows completions-at-point in overlays in the buffer (not for all modes)
+
 #+begin_src emacs-lisp
   (use-package counsel
     :after ivy
@@ -471,6 +550,29 @@ This is function will be bound to TAB in my personal keymap
 :ensure t
 :init (ivy-rich-mode 1)
 )
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package ivy-hydra)
+#+end_src
+
+Make grep buffer writable. Allows one to edit occur buffers by:
+- Running C-x C-q to make occur buffer writable
+- ... making whatever change
+- Running C-x C-s to save changes. The changes will be written in to the source files.
+#+begin_src emacs-lisp
+(use-package wgrep)
+#+end_src
+
+* Company
+
+#+begin_src emacs-lisp
+  (use-package company
+    :ensure t
+    ;;:init (global-company-mode 1)
+    :bind (:map company-active-map
+                ("C-n" . company-select-next-or-abort)
+                ("C-p" . company-select-previous-or-abort)))
 #+end_src
 
 * Helpful
@@ -527,12 +629,25 @@ This is function will be bound to TAB in my personal keymap
     (load (expand-file-name "~/.quicklisp/slime-helper.el"))
     (setq inferior-lisp-program "sbcl"))
 
-    ;; python
+  ;; python
 
-    (use-package elpy
-    :ensure t
-    :init
-    (elpy-enable))
+;;  (use-package python
+;;    :ensure t
+;;    :config
+;;    (setq python-shell-completion-native-enable nil)) ;; otherwise, elpy raises warning
+
+;;  (use-package elpy
+;;    :ensure t
+;;    :init
+;;    (elpy-enable))
+;;
+#+end_src
+** Lisp
+
+#+begin_src emacs-lisp
+      (use-package lispy
+        :ensure t
+        :hook (emacs-lisp-mode . lispy-mode))
 #+end_src
 
 ** R
@@ -605,18 +720,47 @@ This is function will be bound to TAB in my personal keymap
 First configure the python interpreter being used. This uses 
 the Python package (not elpy).
 
+Question: python vs python mode?
+
 #+begin_src emacs-lisp
-(setq python-shell-interpreter "python3"
-python-shell-interpreter-args "-i")
+  (use-package python
+        :ensure nil
+        :config
+        (setq python-shell-interpreter "ipython3")
+        (setq python-shell-interpreter-args "-i --simple-prompt"))
+
+#+end_src
+
+
+#+begin_src emacs-lisp
+  (use-package elpy
+    :ensure t
+    :hook (python-mode . elpy-enable)
+    :custom
+    (elpy-rpc-python-command "python3"))
+    ;;:init
+    ;;(elpy-enable))
+    ;;(setq python-shell-interpreter-args "-c exec('__import__(\\'readline\\')') -i"))
+#+end_src
+
+#+begin_src emacs-lisp
+  ;;(use-package python-mode
+  ;;  :ensure t
+  ;;  :hook (python-mode . lsp-deferred)
+  ;;  :custom
+  ;;  (setq python-shell-interpreter "python3"))
+    ;;(setq python-shell-completion-native-enable nil)
+    ;;(setq python-shell-interpreter-args "-i"))
+
 #+end_src
 
 Now we configure elpy
 
 #+begin_src emacs-lisp
-(use-package elpy
-  :ensure t
-  :init
-  (elpy-enable))
+;;(use-package elpy
+;;  :ensure t
+;;  :init
+;;  (elpy-enable))
 #+end_src
 
 * terminals
@@ -639,6 +783,19 @@ Useful keybindings for terminal:
 #+end_src
 
 * Custom functions
+
+Mark word
+
+#+begin_src emacs-lisp
+(defun gwb/mark-word-at-point ()
+  (interactive)
+  (let ((word (word-at-point t)))
+    (progn
+      (forward-word)
+      (backward-word)
+      (set-mark-command 'nil)
+      (search-forward word))))
+#+end_src
 
 My usual latex note template
 
@@ -755,13 +912,16 @@ Copy to osx
   (shell-command-on-region start end "pbcopy"))
 #+end_src
 
+Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps to s-SPC.
 
 #+begin_src emacs-lisp
   (defvar gwb-custom-keymap nil "my keymap..")
 
   (setq gwb-custom-keymap (make-sparse-keymap))
   (global-set-key (kbd "C-c x") gwb-custom-keymap)
+  (global-set-key (kbd "M-SPC") gwb-custom-keymap)
 
+  (define-key gwb-custom-keymap (kbd "m") 'gwb/mark-word-at-point)
   (define-key gwb-custom-keymap (kbd "n") 'gwb/latex-note)
   (define-key gwb-custom-keymap (kbd "o") 'gwb/flip-windows)
   (define-key gwb-custom-keymap (kbd ".") 'gwb/edit-config)
