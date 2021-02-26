@@ -1,27 +1,26 @@
 ;; -*- lexical-binding: t -*-
 
-(defun gwb-read-test ()
-  (interactive)
-  (message (counsel-read-directory-name "dir name:" (buffer-file-name (current-buffer)))))
 
-
-;; (defun gwb-fzf-move-to-dir ()
-;;   (interactive)
-;;   (setq ring-bell-function (lambda () nil))  
-;;   (ivy-quit-and-run
-;;     (setq ring-bell-function nil)
-;;     (let ((base-dir (counsel-read-directory-name "Move fzf base dir to: " )))
-;;       (counsel-fzf nil base-dir (format "fzf [%s]: " base-dir)))))
-
-
-(defmacro gwb-test-macro (form)
-  (message "bar")
-  form)
-
-(macroexpand-all '(let ((foo "blabli"))
-		    (gwb-test-macro `(message ,foo))))
 
 (defmacro gwb-ivy-quit-and-run-silently (&rest body)
+  "Thin wrapper around Ivy's `ivy-quit-and-run' function to make
+it silent. The original `ivy-quit-and-run' macro relies on the
+`abort-recursive-edit' function wich throws an audible
+error. This wrapper just mutes that error by setting the
+`rung-bell-function' variable to `(lambda () nil)' and then
+restoring it to what it was after the error has been muted.
+
+NOTE: why do we need this to be a macro? Previous versions tried
+to do it without a macro, but there was a very subtle
+issue. Indeed, normally, a lexical variable used in the macro
+call would have the correct behavior. However, the
+`abort-recursive-edit' function used by `ivy-quit-and-run'
+unwinds the call stack and therefore the current-bell-fn
+variable wouldn't be seen inside it (I get `void variable'
+errors, which I wasn't able to reproduce using simple
+macros). This construct forces the content of current-bell-fn to
+be evaluated before the macro ivy-quit-and-run is called... and
+it works."
   (let ((current-bell-fn ring-bell-function))
     (setq ring-bell-function (lambda () nil))
     `(ivy-quit-and-run
@@ -29,35 +28,23 @@
        ,@body)))
 
 
-;; (macroexpand-1 '(gwb-ivy-quit-and-run-silently (message "foo")))
-
-
-
 (defun gwb-fzf-move-to-dir ()
-  (interactive)
-  (let ((current-bell-fn ring-bell-function))
-    (setq ring-bell-function (lambda () nil))
-    (ivy-quit-and-run
-      ;; (reset-ring-bell-fn)
-      (setq ring-bell-function current-bell-fn)
-      (let ((base-dir (counsel-read-directory-name "Move fzf base dir to: " )))
-	(counsel-fzf nil base-dir (format "fzf [%s]: " base-dir))))))
-
-
-(defun gwb-fzf-move-to-dir ()
+  "Interrupts an ivy-fzf session to ask for a directory, then
+restarts a new ivy-fzf instance from the selected directory. "
   (interactive)
   (gwb-ivy-quit-and-run-silently
    (let ((base-dir (counsel-read-directory-name "Move fzf base dir to: " )))
-	(counsel-fzf nil base-dir (format "fzf [%s]: " base-dir)))))
-
+     (gwb-counsel-fzf nil base-dir (format "fzf [%s]: " base-dir)))))
 
 
 (defun gwb-fzf-move-to-home ()
+  "Interrupts an ivy-fzf session and restarts a new one from the home
+directory (i.e. ~/)."
   (interactive)
   (setq ring-bell-function (lambda () nil))
   (ivy-quit-and-run
     (setq ring-bell-function nil)
-    (counsel-fzf nil "~" (format "fzf [%s]: " "~"))))
+    (gwb-counsel-fzf nil "~" (format "fzf [%s]: " "~"))))
 
 (global-set-key (kbd "M-s z") #'gwb-counsel-fzf)
 
@@ -66,11 +53,17 @@
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-.") #'gwb-fzf-move-to-home)
     (define-key map (kbd "C-f") #'gwb-fzf-move-to-dir)
-    ;; (define-key map (kbd "C-,") #'counsel--info-lookup-symbol)
     map))
 
 (defun gwb-counsel-fzf (&optional initial-input initial-directory fzf-prompt)
-  "Open a file using the fzf shell command.
+  "A slightly modified version of counsel's `ivy-counsel-fzf' function. There
+are two differences:
+(1) The default prompt shows the current directory from which fzf will be run.
+(2) The `gwb-counsel-fzf' keymap has been added.
+
+The original documentation for the `ivy-counsel-fzf' function follows:
+
+Open a file using the fzf shell command.
 INITIAL-INPUT can be given as the initial minibuffer input.
 INITIAL-DIRECTORY, if non-nil, is used as the root directory for search.
 FZF-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
@@ -93,17 +86,5 @@ FZF-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
             :action #'counsel-fzf-action
 	    :keymap gwb-counsel-fzf
             :caller 'counsel-fzf))
-
-
-;; (defun counsel-dired (&optional initial-input)
-;;   "Forward to `dired'.
-;; When INITIAL-INPUT is non-nil, use it in the minibuffer during completion."
-;;   (interactive)
-;;   (let ((counsel--find-file-predicate #'file-directory-p))
-;;     (counsel--find-file-1
-;;      "Dired (directory): " initial-input
-;;      (lambda (d) (dired (expand-file-name d)))
-;;      'counsel-dired)))
-
 
 
