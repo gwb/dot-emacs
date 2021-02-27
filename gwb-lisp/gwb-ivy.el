@@ -46,22 +46,20 @@ directory (i.e. ~/)."
     (setq ring-bell-function nil)
     (gwb-counsel-fzf nil "~" (format "fzf [%s]: " "~"))))
 
-;; (global-set-key (kbd "M-s z") #'gwb-counsel-fzf)
 
-
-(defvar gwb-counsel-fzf
+(defvar gwb-counsel-fzf-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-.") #'gwb-fzf-move-to-home)
     (define-key map (kbd "C-f") #'gwb-fzf-move-to-dir)
     map))
 
 (defun gwb-counsel-fzf (&optional initial-input initial-directory fzf-prompt)
-  "A slightly modified version of counsel's `ivy-counsel-fzf' function. There
+  "A slightly modified version of counsel's `counsel-fzf' function. There
 are two differences:
 (1) The default prompt shows the current directory from which fzf will be run.
 (2) The `gwb-counsel-fzf' keymap has been added.
 
-The original documentation for the `ivy-counsel-fzf' function follows:
+The original documentation for the `counsel-fzf' function follows:
 
 Open a file using the fzf shell command.
 INITIAL-INPUT can be given as the initial minibuffer input.
@@ -78,14 +76,40 @@ FZF-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
   (setq counsel--fzf-dir
         (or initial-directory
             (funcall counsel-fzf-dir-function)))
-  (ivy-read (or fzf-prompt (format "fzf [%s]: " default-directory))
+  (ivy-read (or fzf-prompt (format "fzf [%s]: " counsel--fzf-dir))
             #'counsel-fzf-function
             :initial-input initial-input
             :re-builder #'ivy--regex-fuzzy
             :dynamic-collection t
             :action #'counsel-fzf-action
-	    :keymap gwb-counsel-fzf
-            :caller 'counsel-fzf))
+	    :keymap gwb-counsel-fzf-map
+            :caller 'gwb-counsel-fzf)) 	;should I replace with gwb-counsel-fzf? it makes things lag out..
+
+
+(ivy-configure 'gwb-counsel-fzf
+  :occur #'counsel-fzf-occur
+  :unwind-fn #'counsel-delete-process
+  :exit-codes '(1 "Nothing found"))
+
+(defun gwb-fzf-dired-jump-other-window (file)
+  "Opens the directory in which FILE resides in a dired buffer
+in another window. FILE must be a string."
+  (message "bunny est passe par la")
+  (dired-jump t
+	      (expand-file-name file counsel--fzf-dir)))
+
+
+
+
+(defun gwb-open-file-dir-other-window (file)
+  "Opens the directory in which FILE resides in a dired buffer
+in another window. FILE must be a string."
+  (dired-other-window
+   (file-name-directory file)))
+
+(ivy-set-actions
+ 'gwb-counsel-fzf
+ `(("d" gwb-fzf-dired-jump-other-window "dired")))
 
 (provide 'gwb-ivy)
 ;;; gwb-ivy.el ends here
