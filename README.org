@@ -5,7 +5,7 @@
   (tool-bar-mode -1)
   (menu-bar-mode -1)
   (fset 'yes-or-no-p 'y-or-n-p)
-  (toggle-scroll-bar) ;; (toggle-scroll-bar - 1)
+  (scroll-bar-mode -1)
   (setq inhibit-startup-screen t)
   (set-fill-column 80)
 #+END_SRC
@@ -127,7 +127,8 @@ Note: try to prune this down? Is all of this needed?
 The following is David's special unicode input mode:
 
 #+BEGIN_SRC emacs-lisp
-(add-to-list 'load-path "~/.emacs.d/inputs")
+;; (add-to-list 'load-path "~/.emacs.d/inputs")
+(add-to-list 'load-path (thread-last user-emacs-directory (expand-file-name "inputs")))
 (require 'darais-input)
 #+END_SRC
 
@@ -522,6 +523,15 @@ Company does a lot of things:
 - It shows completions-at-point in overlays in the buffer (not for all modes)
 
 #+begin_src emacs-lisp
+
+  (use-package gwb-ivy
+  :after counsel
+  :demand t
+  :bind (("M-s z" . gwb-counsel-fzf)))
+
+#+end_src
+
+#+begin_src emacs-lisp
   (use-package counsel
     :after ivy
     :ensure t
@@ -783,6 +793,10 @@ Useful keybindings for terminal:
 #+end_src
 
 * Custom functions
+
+#+begin_src emacs-lisp
+(use-package gwb-hugo) ;; allows to quickly start and kill hugo servers
+#+end_src
 
 Mark word
 

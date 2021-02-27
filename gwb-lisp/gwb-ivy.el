@@ -46,7 +46,7 @@ directory (i.e. ~/)."
     (setq ring-bell-function nil)
     (gwb-counsel-fzf nil "~" (format "fzf [%s]: " "~"))))
 
-(global-set-key (kbd "M-s z") #'gwb-counsel-fzf)
+;; (global-set-key (kbd "M-s z") #'gwb-counsel-fzf)
 
 
 (defvar gwb-counsel-fzf
@@ -87,4 +87,6 @@ FZF-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
 	    :keymap gwb-counsel-fzf
             :caller 'counsel-fzf))
 
+(provide 'gwb-ivy)
+;;; gwb-ivy.el ends here
 

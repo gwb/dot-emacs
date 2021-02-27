@@ -11,6 +11,10 @@
 	     '("gnu" . "https://elpa.gnu.org/packages/"))
 (add-to-list 'package-archives
 	     '("org" . "https://orgmode.org/elpa/") t)
+
+
+(add-to-list 'load-path (thread-last user-emacs-directory (expand-file-name "gwb-lisp")))
+
 ;; adds installed packages directories to load path
 ;; and evaluates their autoloads
 (package-initialize)
