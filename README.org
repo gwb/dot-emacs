@@ -156,6 +156,32 @@ and loads it.
     (load custom-file))
 #+END_SRC
 
+* Outlines
+
+#+begin_src emacs-lisp
+  (use-package outline
+  :init
+  ;;(defvar gwb-outline-minor-mode-map (make-sparse-keymap))
+  :bind
+  (:map outline-minor-mode-map
+        ("M-n" . 'outline-next-visible-heading)
+        ("M-p" . 'outline-previous-visible-heading)
+        ("C-c C-q" . 'hide-body)
+        ("C-c C-o" . 'hide-other)
+        ("C-c C-c" . 'hide-entry)
+        ("C-c C-a" . 'show-all)
+        ("C-c C-e" . 'outline-show-entry)
+        ("C-c C-k" . 'show-branches)))
+#+end_src
+
+* Window utilities
+
+#+begin_src emacs-lisp
+  (use-package ace-window
+    :ensure t
+    :bind ("M-o" . 'ace-window))
+#+end_src
+
 * Search improvements
 Notes:
    - You can test regexps interactively using emacs's built-in regexp builder
@@ -610,15 +636,15 @@ Make grep buffer writable. Allows one to edit occur buffers by:
 * Programming languages
 ** Language servers
    #+begin_src emacs-lisp
-     (use-package lsp-mode
-       :ensure t
-       :commands (lsp lsp-deferred)
-       :init
-       (setq lsp-keymap-prefix "C-c l")
-       :hook ((ess-r-mode . lsp-deferred))
-       :config
-       (lsp-enable-which-key-integration t)
-       (setq lsp-diagnostics-provider :none))
+     ;; (use-package lsp-mode
+     ;;   :ensure t
+     ;;   :commands (lsp lsp-deferred)
+     ;;   :init
+     ;;   (setq lsp-keymap-prefix "C-c l")
+     ;;   :hook ((ess-r-mode . lsp-deferred))
+     ;;   :config
+     ;;   (lsp-enable-which-key-integration t)
+     ;;   (setq lsp-diagnostics-provider :none))
    #+end_src
 ** Misc languages
 
@@ -655,35 +681,73 @@ Make grep buffer writable. Allows one to edit occur buffers by:
 ** Lisp
 
 #+begin_src emacs-lisp
-      (use-package lispy
-        :ensure t
-        :hook (emacs-lisp-mode . lispy-mode))
+  (use-package lispy
+    :ensure t
+    :hook (emacs-lisp-mode . lispy-mode)
+    :bind (:map lispy-mode-map
+                ("M-o" . nil)))
 #+end_src
 
 ** R
 
+ESS is (used to be?) fiddly to setup correctly.
+
+- I used to have both a version installed from the website, and one from
+  MELPA... this was creating all sorts of issues. I have now removed the
+  version from the website (it was a very old version), and kept only
+  the MELPA version.
+  NOTE: the version on the website is very very old (2019) while the MELPA
+  version (i.e. the devel version) is updated very regularly.
+  => make sure to stick to the MELPA version
+
+- To load ESS, we used to need to include a (require 'ess-site) statement. This
+  is no longer the case, as per the documentation (see [[http://ess.r-project.org/ess.pdf][here]] page 7 -- or search
+  'use-package' in the ESS manual).
+
+- The first (use-package ess :defer t) sets up ESS, deferring the loading. When the
+  loading is triggered by an autoload event (e.g. visiting an R file), ESS loads the
+  ess-r-mode. The binding needs to be set in a separate ess-r-mode use-package because
+  the ess-r-mode-map is defined by the ess-r-mode package, so if we put the bindings in
+  the first one, the mode maps are not defined at the moment when they are evaluated.
+
+
 #+begin_src emacs-lisp
   (use-package ess
-    :ensure t
-    :init (require 'ess-site)
-    :config
-    (setq ess-r-backend 'lsp)
-    (setq ess-use-flymake nil))
+    :defer t)
+
+  (use-package ess-r-mode
+    :bind
+    (:map
+     ess-r-mode-map
+     ("_" . ess-insert-assign)
+     :map
+     inferior-ess-r-mode-map
+     ("_" . ess-insert-assign)))
+#+end_src
+
+#+begin_src emacs-lisp
+  ;; (use-package ess
+  ;;   :ensure t
+  ;;   :init (require 'ess-site)
+  ;;   :config
+  ;;   (setq ess-r-backend 'lsp)
+  ;;   (setq ess-use-flymake nil))
 #+end_src
    
 #+begin_src emacs-lisp
-;  (add-to-list 'load-path "~/.emacs.d/ESS/lisp")
-;  (use-package ess-site
-;    :demand t
-;    :config
-;    (setq comint-scroll-to-bottom-on-input t)
-;    (setq comint-scroll-to-bottom-on-output t)
-;    (setq comint-move-point-for-output t)
-;    ;; tab will try to indent first, then autocomplete
-;    (setq ess-tab-complete-in-script t))
-;
+  ;;(add-to-list 'load-path "~/.emacs.d/ESS/lisp")
+  ;;(require 'ess-site)
+  ;; (use-package ess-site
+  ;;   :demand t
+  ;;   :config
+  ;;   (setq comint-scroll-to-bottom-on-input t)
+  ;;   (setq comint-scroll-to-bottom-on-output t)
+  ;;   (setq comint-move-point-for-output t)
+  ;;   ;; tab will try to indent first, then autocomplete
+  ;;   (setq ess-tab-complete-in-script t))
+
 #+end_src
-   
+
 ** Latex
 
 
@@ -773,6 +837,13 @@ Now we configure elpy
 ;;  (elpy-enable))
 #+end_src
 
+** Haskell
+#+begin_src emacs-lisp
+  (use-package haskell-mode
+  :ensure t
+  :hook (haskell-mode . interactive-haskell-mode)
+   )
+#+end_src
 * terminals
 Useful keybindings for terminal:
 - C-c C-k: term-char-mode (can't use usual emacs bindings)
@@ -827,16 +898,22 @@ My usual latex note template
 Better Occur behavior
 
 #+begin_src emacs-lisp
-(defun gwb/kill-occur-buffer-window (&rest args)
-    (delete-window (get-buffer-window "*Occur*")))
-
-(defun gwb/switch-to-occur-buffer (&rest args)
-  (select-window (get-buffer-window "*Occur*")))
+  (defun gwb/kill-occur-buffer-window (&rest args)
+      (delete-window (get-buffer-window "*Occur*")))
 
 
-(advice-add 'occur-mode-goto-occurrence :after #'gwb/kill-occur-buffer-window)
+  ;; (defun gwb/switch-to-occur-buffer (&rest args)
+  ;;   (select-window (get-buffer-window "*Occur*")))
 
-(advice-add 'occur' :after #'gwb/switch-to-occur-buffer)
+  (defun gwb/switch-to-occur-buffer (&rest args)
+    (let ((buffer-window (get-buffer-window "*Occur*")))
+      (when buffer-window
+        (select-window buffer-window))))
+
+
+  (advice-add 'occur-mode-goto-occurrence :after #'gwb/kill-occur-buffer-window)
+
+  (advice-add 'occur :after #'gwb/switch-to-occur-buffer)
 
 #+end_src
 

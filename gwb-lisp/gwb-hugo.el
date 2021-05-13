@@ -1,5 +1,6 @@
 ;; -*- lexical-binding: t -*-
 
+(require 'projectile)
 
 
 (defun gwb-run-hugo-server ()

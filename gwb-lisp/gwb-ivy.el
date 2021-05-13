@@ -1,6 +1,8 @@
 ;; -*- lexical-binding: t -*-
 
 
+(require 'ivy)
+(require 'counsel)
 
 (defmacro gwb-ivy-quit-and-run-silently (&rest body)
   "Thin wrapper around Ivy's `ivy-quit-and-run' function to make
@@ -22,10 +24,11 @@ macros). This construct forces the content of current-bell-fn to
 be evaluated before the macro ivy-quit-and-run is called... and
 it works."
   (let ((current-bell-fn ring-bell-function))
-    (setq ring-bell-function (lambda () nil))
-    `(ivy-quit-and-run
-       (setq ring-bell-function ,current-bell-fn)
-       ,@body)))
+    `(progn
+       (setq ring-bell-function (lambda () nil))
+       (ivy-quit-and-run
+	 (setq ring-bell-function ,current-bell-fn)
+	 ,@body))))
 
 
 (defun gwb-fzf-move-to-dir ()
@@ -91,25 +94,15 @@ FZF-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
   :unwind-fn #'counsel-delete-process
   :exit-codes '(1 "Nothing found"))
 
-(defun gwb-fzf-dired-jump-other-window (file)
+(defun gwb-counsel-locate-action-dired (file)
   "Opens the directory in which FILE resides in a dired buffer
 in another window. FILE must be a string."
-  (message "bunny est passe par la")
   (dired-jump t
 	      (expand-file-name file counsel--fzf-dir)))
 
-
-
-
-(defun gwb-open-file-dir-other-window (file)
-  "Opens the directory in which FILE resides in a dired buffer
-in another window. FILE must be a string."
-  (dired-other-window
-   (file-name-directory file)))
-
 (ivy-set-actions
  'gwb-counsel-fzf
- `(("d" gwb-fzf-dired-jump-other-window "dired")))
+ `(("d" gwb-counsel-locate-action-dired "dired")))
 
 (provide 'gwb-ivy)
 ;;; gwb-ivy.el ends here
