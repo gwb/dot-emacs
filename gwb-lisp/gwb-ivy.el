@@ -100,9 +100,29 @@ in another window. FILE must be a string."
   (dired-jump t
 	      (expand-file-name file counsel--fzf-dir)))
 
+
+(defun gwb-counsel-fzf-locate-action-extern (file)
+  "Slight modification of `counsel-locate-action-extern' to open
+files found through fzf externally (e.g. pdf, etc..).
+The main change is that I expand the filename using the
+fzf directory. "
+  (interactive "FFile: ")
+  (let ((filepath (expand-file-name file counsel--fzf-dir)))
+    (if (and (eq system-type 'windows-nt)
+             (fboundp 'w32-shell-execute))
+        (w32-shell-execute "open" filepath)
+      (call-process-shell-command (format "%s %s"
+                                          (cl-case system-type
+                                            (darwin "open")
+                                            (cygwin "cygstart")
+                                            (t "xdg-open"))
+                                          (shell-quote-argument filepath))
+                                  nil 0))))
+
 (ivy-set-actions
  'gwb-counsel-fzf
- `(("d" gwb-counsel-locate-action-dired "dired")))
+ `(("d" gwb-counsel-locate-action-dired "dired")
+   ("x" gwb-counsel-fzf-locate-action-extern "open externally")))
 
 (provide 'gwb-ivy)
 ;;; gwb-ivy.el ends here
