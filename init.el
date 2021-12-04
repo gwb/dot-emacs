@@ -14,6 +14,8 @@
 
 
 (add-to-list 'load-path (thread-last user-emacs-directory (expand-file-name "gwb-lisp")))
+(let ((default-directory (thread-last user-emacs-directory (expand-file-name "gwb-lisp"))))
+  (normal-top-level-add-subdirs-to-load-path))
 
 ;; adds installed packages directories to load path
 ;; and evaluates their autoloads

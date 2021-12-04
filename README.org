@@ -1,3 +1,11 @@
+
+* Emacs 28 fixes
+
+#+begin_src emacs-lisp
+  (use-package gwb-fix-obsolescence
+    :demand t)
+#+end_src
+
 * Interface tweaks
 ** Remove frills from interface + some customizations
    
@@ -8,11 +16,13 @@
   (scroll-bar-mode -1)
   (setq inhibit-startup-screen t)
   (set-fill-column 80)
+  (setq ring-bell-function 'ignore)
 #+END_SRC
 
 ** Some better defaults
 
 #+BEGIN_SRC emacs-lisp
+  (setq-default indent-tabs-mode nil)
   (set-fill-column 80)
   (setq uniquify-buffer-name-style 'forward)
   (show-paren-mode)
@@ -558,13 +568,14 @@ Company does a lot of things:
 #+end_src
 
 #+begin_src emacs-lisp
-  (use-package counsel
-    :after ivy
-    :ensure t
-    :demand t
-    :bind (("M-x" . counsel-M-x)
-	   ("C-x C-f" . counsel-find-file)
-	   ("C-h f" . counsel-describe-function)))
+    (use-package counsel
+      :after ivy
+      :ensure t
+      :demand t
+      :bind (("M-x" . counsel-M-x)
+             ("C-x C-f" . counsel-find-file)
+             ("C-h f" . counsel-describe-function)
+             ("M-y" . counsel-yank-pop)))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -600,15 +611,68 @@ Make grep buffer writable. Allows one to edit occur buffers by:
 (use-package wgrep)
 #+end_src
 
+* Undoo-tree
+
+#+begin_src emacs-lisp
+  (use-package undo-tree
+    :ensure t
+    :config
+    (global-undo-tree-mode)
+    :bind
+    (("C-z" . undo-tree-undo)
+     ("M-z" . undo-tree-redo)))
+#+end_src
+
 * Company
 
 #+begin_src emacs-lisp
   (use-package company
     :ensure t
     ;;:init (global-company-mode 1)
+    :hook (c-mode . company-mode)
     :bind (:map company-active-map
                 ("C-n" . company-select-next-or-abort)
                 ("C-p" . company-select-previous-or-abort)))
+#+end_src
+
+
+In some situations, we don't want to autocomplete (e.g. when trying to
+autocomplete paths with many files
+
+#+begin_src emacs-lisp
+  ;; (setq company-completion-started-hook
+  ;;      (lambda (is-manual)
+  ;;
+  ;;(when (home-dir-path (thing-at-point 'line t))
+  ;;          (message "harshly cancelling completion")
+  ;;          (company-cancel))))
+#+end_src
+
+
+#+begin_src emacs-lisp
+  (use-package company-c-headers
+    :after (company)
+    :config
+    (add-to-list 'company-backends 'company-c-headers)
+    (add-to-list 'company-c-headers-path-system "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"))
+#+end_src
+
+
+** FIX
+#+begin_src emacs-lisp
+  ;; (use-package gwb-indent
+  ;;   :after company
+  ;; :bind (:map company-mode-map
+  ;;             ("TAB" . gwb-indent-for-tab-command)))
+#+end_src
+
+
+* Semantic
+
+=> Not working for now.. need to find a fix?
+#+begin_src emacs-lisp
+  ;(use-package semantic
+  ;  :hook (c-mode . semantic-mode))
 #+end_src
 
 * Helpful
@@ -678,6 +742,17 @@ Make grep buffer writable. Allows one to edit occur buffers by:
 ;;    (elpy-enable))
 ;;
 #+end_src
+
+#+begin_src emacs-lisp
+  (use-package markdown-mode
+    :ensure t)
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package elm-mode
+    :ensure t)
+#+end_src
+
 ** Lisp
 
 #+begin_src emacs-lisp
@@ -748,44 +823,59 @@ ESS is (used to be?) fiddly to setup correctly.
 
 #+end_src
 
+** C
+#+begin_src emacs-lisp
+  (use-package cc-mode
+    :config
+    (setq c-default-style "linux")
+    (setq c-basic-offset 4))
+#+end_src
+** Rust
+#+begin_src emacs-lisp
+  (use-package rust-mode
+    :init
+    (add-hook 'rust-mode (lambda () (setq indent-tabs-mode nil))))
+#+end_src
 ** Latex
 
 
 #+begin_src emacs-lisp
-;; Reftex
-(require 'reftex)
-(add-hook 'LaTeX-mode-hook 'turn-on-reftex)
-(setq reftex-plug-into-AUCTeX t)
+  ;; Reftex
+  (require 'reftex)
+  (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+  (setq reftex-plug-into-AUCTeX t)
 
-;; Auxtex
-(setq TeX-auto-save t)
-(setq TeX-parse-self t)
+  ;; Auxtex
+  (setq TeX-auto-save t)
+  (setq TeX-parse-self t)
 
-;; PDF search
-(add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
-(add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+  ;; PDF search
+  (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
+  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 
-(setq TeX-PDF-mode t)
-(when (eq system-type 'darwin)
-  (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
-  (setq TeX-view-program-list
-'(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
-  )
-
-(require 'auctex-latexmk)
-(auctex-latexmk-setup)
-(setq auctex-latexmk-inherit-TeX-PDF-mode t)
-
-;; Only change sectioning colour
-(setq font-latex-fontify-sectioning 'color)
-;; super-/sub-script on baseline
-(setq font-latex-fontify-script nil) ; might not keep this line.. I like smaller {sub/super}scripts
-(setq font-latex-script-display (quote (nil)))
-;; Do not change super-/sub-script font
+  (setq TeX-PDF-mode t)
+  (when (eq system-type 'darwin)
+    (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
+    (setq TeX-view-program-list
+  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+    )
 
 
-(setq font-latex-deactivated-keyword-classes
-    '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
+  ;; (use-packag auctex-latexmk) 
+  (require 'auctex-latexmk)
+  (auctex-latexmk-setup)
+  (setq auctex-latexmk-inherit-TeX-PDF-mode t)
+
+  ;; Only change sectioning colour
+  (setq font-latex-fontify-sectioning 'color)
+  ;; super-/sub-script on baseline
+  (setq font-latex-fontify-script nil) ; might not keep this line.. I like smaller {sub/super}scripts
+  (setq font-latex-script-display (quote (nil)))
+  ;; Do not change super-/sub-script font
+
+
+  (setq font-latex-deactivated-keyword-classes
+      '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
 
 #+end_src
 
@@ -816,6 +906,8 @@ Question: python vs python mode?
     ;;(elpy-enable))
     ;;(setq python-shell-interpreter-args "-c exec('__import__(\\'readline\\')') -i"))
 #+end_src
+
+
 
 #+begin_src emacs-lisp
   ;;(use-package python-mode
@@ -864,6 +956,14 @@ Useful keybindings for terminal:
 #+end_src
 
 * Custom functions
+
+Spotify custom utilities
+
+#+begin_src emacs-lisp
+(use-package elspot)
+#+end_src
+
+Spotify hugo utilities
 
 #+begin_src emacs-lisp
 (use-package gwb-hugo) ;; allows to quickly start and kill hugo servers
@@ -1003,6 +1103,17 @@ Copy to osx
   (shell-command-on-region start end "pbcopy"))
 #+end_src
 
+For some reason, the ring bell function gets reactivated
+every time my laptop goes to sleep on mac os Big Sur... Need
+a shortcut to quickly set this.
+
+#+begin_src emacs-lisp
+  (defun gwb-mute-alerts ()
+    (interactive)
+    (setq ring-bell-function 'ignore))
+
+#+end_src
+
 Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps to s-SPC.
 
 #+begin_src emacs-lisp
@@ -1017,5 +1128,29 @@ Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps
   (define-key gwb-custom-keymap (kbd "o") 'gwb/flip-windows)
   (define-key gwb-custom-keymap (kbd ".") 'gwb/edit-config)
   (define-key gwb-custom-keymap (kbd "w") 'gwb/copy-to-osx)
+  (define-key gwb-custom-keymap (kbd "<") 'gwb-mute-alerts)
   (define-key gwb-custom-keymap (kbd "TAB") 'gwb/indent-org-block)
+  (define-key gwb-custom-keymap (kbd "s") 'hydra-spotify/body)
+  (define-key gwb-custom-keymap (kbd "u") 'undo-tree-visualize)
+#+end_src
+
+
+Another custom keymap for keybindings that should not be overriden by major / minor modes
+
+#+begin_src emacs-lisp
+
+  (defvar gwb-protected-keymap (make-sparse-keymap)
+    "Keymap for my protected keybindings")
+
+  (define-minor-mode gwb-protected-keybindings-mode
+    "Minor mode for my protected keybindings."
+    :init-value t
+    :global t
+    :keymap gwb-protected-keymap)
+
+
+  ;; (add-to-list 'emulation-mode-map-alists
+  ;;              `((gwb-protected-keybindings-mode . ,gwb-protected-keymap)))
+
+  ;; (define-key gwb-protected-keymap (kbd "TAB") 'gwb-indent-for-tab-command)
 #+end_src
