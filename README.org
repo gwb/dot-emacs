@@ -627,12 +627,13 @@ Make grep buffer writable. Allows one to edit occur buffers by:
 
 #+begin_src emacs-lisp
   (use-package company
-    :ensure t
-    ;;:init (global-company-mode 1)
-    :hook (c-mode . company-mode)
+    :hook ((c-mode . company-mode)
+           (ess-r-mode . company-mode))
     :bind (:map company-active-map
                 ("C-n" . company-select-next-or-abort)
-                ("C-p" . company-select-previous-or-abort)))
+                ("C-p" . company-select-previous-or-abort))
+    :config
+    (setq company-idle-delay nil))
 #+end_src
 
 
@@ -657,6 +658,11 @@ autocomplete paths with many files
     (add-to-list 'company-c-headers-path-system "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"))
 #+end_src
 
+
+#+begin_src emacs-lisp
+  (use-package gwb-indent
+    :after company)
+#+end_src
 
 ** FIX
 #+begin_src emacs-lisp
@@ -698,23 +704,37 @@ autocomplete paths with many files
 #+end_src
 
 * Programming languages
-** Language servers
-   #+begin_src emacs-lisp
-     ;; (use-package lsp-mode
-     ;;   :ensure t
-     ;;   :commands (lsp lsp-deferred)
-     ;;   :init
-     ;;   (setq lsp-keymap-prefix "C-c l")
-     ;;   :hook ((ess-r-mode . lsp-deferred))
-     ;;   :config
-     ;;   (lsp-enable-which-key-integration t)
-     ;;   (setq lsp-diagnostics-provider :none))
-   #+end_src
 ** Misc languages
+
+I have played around, at some point or another, with many programming languages. This section deals with the languages for which the config is minimal (or non-existent). 
 
 #+begin_src emacs-lisp
   (use-package julia-mode 
     :ensure t)
+
+  (use-package markdown-mode
+    :ensure t)
+
+  (use-package elm-mode
+    :ensure t)
+
+  (use-package haskell-mode
+  :ensure t
+  :hook (haskell-mode . interactive-haskell-mode))
+
+  (use-package rust-mode
+    :init
+    (add-hook 'rust-mode (lambda () (setq indent-tabs-mode nil))))
+#+end_src
+
+** Lisp languages
+
+#+begin_src emacs-lisp
+  (use-package lispy
+    :ensure t
+    :hook (emacs-lisp-mode . lispy-mode)
+    :bind (:map lispy-mode-map
+                ("M-o" . nil)))
 
   (use-package racket-mode 
     :ensure t
@@ -728,39 +748,6 @@ autocomplete paths with many files
     :init
     (load (expand-file-name "~/.quicklisp/slime-helper.el"))
     (setq inferior-lisp-program "sbcl"))
-
-  ;; python
-
-;;  (use-package python
-;;    :ensure t
-;;    :config
-;;    (setq python-shell-completion-native-enable nil)) ;; otherwise, elpy raises warning
-
-;;  (use-package elpy
-;;    :ensure t
-;;    :init
-;;    (elpy-enable))
-;;
-#+end_src
-
-#+begin_src emacs-lisp
-  (use-package markdown-mode
-    :ensure t)
-#+end_src
-
-#+begin_src emacs-lisp
-  (use-package elm-mode
-    :ensure t)
-#+end_src
-
-** Lisp
-
-#+begin_src emacs-lisp
-  (use-package lispy
-    :ensure t
-    :hook (emacs-lisp-mode . lispy-mode)
-    :bind (:map lispy-mode-map
-                ("M-o" . nil)))
 #+end_src
 
 ** R
@@ -794,33 +781,12 @@ ESS is (used to be?) fiddly to setup correctly.
     :bind
     (:map
      ess-r-mode-map
+     ("TAB" . gwb-indent-for-tab-command)
      ("_" . ess-insert-assign)
      :map
      inferior-ess-r-mode-map
+     ("TAB" . gwb-indent-for-tab-command)
      ("_" . ess-insert-assign)))
-#+end_src
-
-#+begin_src emacs-lisp
-  ;; (use-package ess
-  ;;   :ensure t
-  ;;   :init (require 'ess-site)
-  ;;   :config
-  ;;   (setq ess-r-backend 'lsp)
-  ;;   (setq ess-use-flymake nil))
-#+end_src
-   
-#+begin_src emacs-lisp
-  ;;(add-to-list 'load-path "~/.emacs.d/ESS/lisp")
-  ;;(require 'ess-site)
-  ;; (use-package ess-site
-  ;;   :demand t
-  ;;   :config
-  ;;   (setq comint-scroll-to-bottom-on-input t)
-  ;;   (setq comint-scroll-to-bottom-on-output t)
-  ;;   (setq comint-move-point-for-output t)
-  ;;   ;; tab will try to indent first, then autocomplete
-  ;;   (setq ess-tab-complete-in-script t))
-
 #+end_src
 
 ** C
@@ -829,12 +795,6 @@ ESS is (used to be?) fiddly to setup correctly.
     :config
     (setq c-default-style "linux")
     (setq c-basic-offset 4))
-#+end_src
-** Rust
-#+begin_src emacs-lisp
-  (use-package rust-mode
-    :init
-    (add-hook 'rust-mode (lambda () (setq indent-tabs-mode nil))))
 #+end_src
 ** Latex
 
@@ -881,25 +841,33 @@ ESS is (used to be?) fiddly to setup correctly.
 
 ** Python
 
-First configure the python interpreter being used. This uses 
-the Python package (not elpy).
+My python uses the `python-mode` as a major mode, but relies heavily on the minor mode `elpy-mode`.
 
-Question: python vs python mode?
+For `python-mode`, the config is pretty straightforward. I configure TAB to use my custom completion command (based on `company`), and configure the shels to use.
 
 #+begin_src emacs-lisp
   (use-package python
-        :ensure nil
-        :config
-        (setq python-shell-interpreter "ipython3")
-        (setq python-shell-interpreter-args "-i --simple-prompt"))
+    :ensure nil
+    :bind
+    (:map python-mode-map
+          ("TAB" . gwb-indent-for-tab-command))
+    :config
+    (setq python-shell-interpreter "ipython3")
+    (setq python-shell-interpreter-args "-i --simple-prompt"))
 
 #+end_src
 
 
+For `elpy-mode`, the config requires a bit more explaining. The Elpy package provides the `elpy-enable' command which provides a wrapper around the `elpy-mode' command which actually activates the minor mode. The minor mode command `elpy-mode` does a few things in its body, including setting up some special configs for `company`. One thing it does, which I don't like, is to setup autocompletion by setting `(setq company-idle-delay 0.1)`. So I'm basically writing as small hook around `elpy-mode` to deactivate auto-complete every time elpy-mode is called.
+
 #+begin_src emacs-lisp
+  (defun gwb-no-company-idle nil
+    (setq company-idle-delay nil))
+
   (use-package elpy
     :ensure t
-    :hook (python-mode . elpy-enable)
+    :hook ((elpy-mode . gwb-no-company-idle)
+           (python-mode . elpy-enable))
     :custom
     (elpy-rpc-python-command "python3"))
     ;;:init
@@ -907,35 +875,6 @@ Question: python vs python mode?
     ;;(setq python-shell-interpreter-args "-c exec('__import__(\\'readline\\')') -i"))
 #+end_src
 
-
-
-#+begin_src emacs-lisp
-  ;;(use-package python-mode
-  ;;  :ensure t
-  ;;  :hook (python-mode . lsp-deferred)
-  ;;  :custom
-  ;;  (setq python-shell-interpreter "python3"))
-    ;;(setq python-shell-completion-native-enable nil)
-    ;;(setq python-shell-interpreter-args "-i"))
-
-#+end_src
-
-Now we configure elpy
-
-#+begin_src emacs-lisp
-;;(use-package elpy
-;;  :ensure t
-;;  :init
-;;  (elpy-enable))
-#+end_src
-
-** Haskell
-#+begin_src emacs-lisp
-  (use-package haskell-mode
-  :ensure t
-  :hook (haskell-mode . interactive-haskell-mode)
-   )
-#+end_src
 * terminals
 Useful keybindings for terminal:
 - C-c C-k: term-char-mode (can't use usual emacs bindings)
