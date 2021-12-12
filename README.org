@@ -787,6 +787,15 @@ ESS is (used to be?) fiddly to setup correctly.
      inferior-ess-r-mode-map
      ("TAB" . gwb-indent-for-tab-command)
      ("_" . ess-insert-assign)))
+
+  (use-package gwb-essr
+    :bind
+    (:map
+     (ess-r-mode-map
+      ("%" . gwb-essr-insert-pipe-maybe))
+     (inferior-ess-r-mode-map
+      ("%" . gwb-essr-insert-pipe-maybe))))
+
 #+end_src
 
 ** C

@@ -136,6 +136,7 @@
 
 
 (defun gwb-essr-insert-pipe-maybe ()
+  (interactive)
   (or (gwb-essr--replace-back-if-match-any '("%>%" "%>% ") "%in%")
       (gwb-essr--replace-back-if-match-any '("%in%" "%in% ") "%")
       (gwb-essr--insert-pipe)))
