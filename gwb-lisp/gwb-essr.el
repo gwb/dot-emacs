@@ -1,99 +1,84 @@
 ;; -*- lexical-binding: t -*-
 
 (require 's)
+(require 'ess-r-mode)
+(require 'dash)
 
+;; NOTES:
+;; - need to use (beginning-of-defun). Requires setting `beginning-of-defun-function`
+;;  which contains a value defined in ess.
 
 ;; ============ Folding
 
 (setq end-args-options '("){" ")" ") {"))
-
-;; ===
-(defun gwb-essr--point-at-bol-p ()
-  (= (point)
-     (save-excursion
-       (beginning-of-line)
-       (point))))
 
 (defun gwb-essr--point-bol ()
   (save-excursion
     (beginning-of-line)
     (point)))
 
-(defun gwb-essr--point-eol ()
-  (save-excursion
-    (end-of-line)
-    (point)))
+(defun gwb-essr--beginning-of-defun ()
+  "The original `ess-r-beginning-of-defun' jumps to the beginning of the
+previous function definition if point is at beginning of line, which is almost
+never what I want. This function doesn't do that."
+  (when (= (point) (gwb-essr--point-bol))
+    (forward-char))
+  (ess-r-beginning-of-defun))
 
+(defun gwb-essr--goto-end-of-args-line ()
+  (gwb-essr--beginning-of-defun)
+  (search-forward "(")
+  (backward-char)
+  (forward-sexp))
 
-;; === situating inside function
+(defun gwb-essr--char-after-blank-p ()
+  (let ((str-after (string (char-after))))
+    (-any (lambda (x) (string= x str-after))
+          '(" " "\t" "\n"))))
 
-(defun gwb-essr--line-content ()
-  (buffer-substring-no-properties
-   (gwb-essr--point-bol)
-   (gwb-essr--point-eol)))
+(defun gwb-essr--maybe-skip-to-char-rec (target)
+  (cond ((string= (string (char-after)) target) (point))
+        ((not (gwb-essr--char-after-blank-p)) nil)
+        (t (progn
+             (forward-char)
+             (gwb-essr--maybe-skip-to-char-rec target)))))
 
-(defun gwb-essr--fn-declaration-line-p ()
-  (let ((line-str (gwb-essr--line-content)))
-    (s-contains? "function(" line-str)))
+(defun gwb-essr--maybe-skip-to-char (target)
+  "Skips all spaces, tabs and newlines to next occurence of `target'. If any other
+char occurs in between, don't move, and return nil."
+  (let ((dest (save-excursion (gwb-essr--maybe-skip-to-char-rec target))))
+    (when dest
+      (goto-char dest))))
 
-(defun gwb-essr--fn-end-args-line-p ()
-  (let ((line-str (gwb-essr--line-content)))
-    (-any? (lambda (x) (s-ends-with? x line-str))
-           end-args-options)))
-
-
-;; === moving around in function
-
-(defun gwb-essr--goto-end-args-rec ()
-  (when (and (not (gwb-essr--fn-end-args-line-p))
-             (not (= (point) (point-max))))
-    (next-line)
-    (gwb-essr--goto-end-args-rec)))
-
-(defun gwb-essr--goto-end-args ()
-  (when (gwb-essr--fn-declaration-line-p)
-    (gwb-essr--goto-end-args-rec)))
-
-(defun gwb-essr--back-to-close-paren-rec ()
-  (when (and (not (eq ?\) (char-after)))
-             (not (= (point) (gwb-essr--point-bol))))
-    (backward-char)
-    (gwb-essr--back-to-close-paren-rec)))
+(defun gwb-essr--goto-fn-beginning-of-body-block ()
+  (gwb-essr--goto-end-of-args-line)
+  (gwb-essr--maybe-skip-to-char "{"))
 
 (defun gwb-essr-hide-function ()
-  (interactive)
-  (progn
-    (gwb-essr--goto-end-args)
-    (move-end-of-line nil)
-    (hs-hide-block)
-    (gwb-essr--back-to-close-paren-rec)
-    (hs-hide-block)
-    (move-beginning-of-line nil)))
+  (gwb-essr--goto-end-of-args-line)
+  (backward-char)
+  (hs-hide-block)
+  (gwb-essr--goto-fn-beginning-of-body-block)
+  (hs-hide-block))
 
 (defun gwb-essr-show-function ()
+  (gwb-essr--goto-fn-beginning-of-body-block)
+  (hs-show-block)
+  (gwb-essr--goto-end-of-args-line)
+  (backward-char)
+  (hs-show-block))
+
+(defun gwb-essr--fn-already-hidden-p ()
+  (save-excursion
+    (gwb-essr--goto-end-of-args-line)
+    (hs-already-hidden-p)))
+
+(defun gwb-essr-toggle-hide-function ()
   (interactive)
-  (progn
-    (search-forward "(")
-    (when (hs-already-hidden-p)
-      (hs-show-block))
-    (search-forward ")")
-    (when (hs-already-hidden-p)
-      (hs-show-block))))
-
-(defun gwb-essr--function-already-hidden-p ()
-  (or (save-excursion
-        (search-forward "(")
-        (hs-already-hidden-p))
-      (save-excursion
-        (search-forward ")")
-        (hs-already-hidden-p))))
-
-(defun gwb-essr-toggle-function-hiding ()
-  (interactive)
-  (if (gwb-essr--function-already-hidden-p)
-      (gwb-essr-show-function)
-    (gwb-essr-hide-function)))
-
+  (save-excursion
+    (if (gwb-essr--fn-already-hidden-p)
+        (gwb-essr-show-function)
+      (gwb-essr-hide-function))))
 
 
 ;; ============ insert shortcuts

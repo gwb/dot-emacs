@@ -800,11 +800,11 @@ ESS is (used to be?) fiddly to setup correctly.
     (:map
      ess-r-mode-map
       ("%" . gwb-essr-insert-pipe-maybe)
-      ("M-TAB" . gwb-essr-toggle-function-hiding)
+      ("M-TAB" . gwb-essr-toggle-hide-function)
     :map
     inferior-ess-r-mode-map
       ("%" . gwb-essr-insert-pipe-maybe)
-      ("M-TAB" . gwb-essr-toggle-function-hiding)))
+      ("M-TAB" . gwb-essr-toggle-hide-function)))
 
 #+end_src
 
