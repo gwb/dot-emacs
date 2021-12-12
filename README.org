@@ -884,7 +884,6 @@ For `elpy-mode`, the config requires a bit more explaining. The Elpy package pro
     (setq company-idle-delay nil))
 
   (use-package elpy
-    :ensure t
     :hook ((elpy-mode . gwb-no-company-idle)
            (python-mode . elpy-enable))
     :custom
@@ -921,7 +920,7 @@ Spotify custom utilities
 (use-package elspot)
 #+end_src
 
-Spotify hugo utilities
+Hugo utilities
 
 #+begin_src emacs-lisp
 (use-package gwb-hugo) ;; allows to quickly start and kill hugo servers
@@ -1097,14 +1096,14 @@ Another custom keymap for keybindings that should not be overriden by major / mi
 
 #+begin_src emacs-lisp
 
-  (defvar gwb-protected-keymap (make-sparse-keymap)
-    "Keymap for my protected keybindings")
+  ;; (defvar gwb-protected-keymap (make-sparse-keymap)
+  ;;   "Keymap for my protected keybindings")
 
-  (define-minor-mode gwb-protected-keybindings-mode
-    "Minor mode for my protected keybindings."
-    :init-value t
-    :global t
-    :keymap gwb-protected-keymap)
+  ;; (define-minor-mode gwb-protected-keybindings-mode
+  ;;   "Minor mode for my protected keybindings."
+  ;;   :init-value t
+  ;;   :global t
+  ;;   :keymap gwb-protected-keymap)
 
 
   ;; (add-to-list 'emulation-mode-map-alists
@@ -1112,3 +1111,4 @@ Another custom keymap for keybindings that should not be overriden by major / mi
 
   ;; (define-key gwb-protected-keymap (kbd "TAB") 'gwb-indent-for-tab-command)
 #+end_src
+
