@@ -748,6 +748,12 @@ I have played around, at some point or another, with many programming languages.
     :init
     (load (expand-file-name "~/.quicklisp/slime-helper.el"))
     (setq inferior-lisp-program "sbcl"))
+
+  (use-package emacs-lisp-mode
+    :hook (emacs-lisp-mode . hs-minor-mode)
+    :bind (:map emacs-lisp-mode-map
+                ("M-[" . hs-hide-all)
+                ("M-]" . hs-show-all)))
 #+end_src
 
 ** R
