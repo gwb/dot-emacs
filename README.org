@@ -778,23 +778,33 @@ ESS is (used to be?) fiddly to setup correctly.
     :defer t)
 
   (use-package ess-r-mode
+    :hook
+    ((ess-r-mode . hs-minor-mode))
     :bind
     (:map
      ess-r-mode-map
      ("TAB" . gwb-indent-for-tab-command)
      ("_" . ess-insert-assign)
+     ("M-[" . hs-hide-all)
+     ("M-]" . hs-show-all)
      :map
      inferior-ess-r-mode-map
      ("TAB" . gwb-indent-for-tab-command)
-     ("_" . ess-insert-assign)))
+     ("_" . ess-insert-assign)
+     ("M-[" . hs-hide-all)
+     ("M-]" . hs-show-all)))
 
   (use-package gwb-essr
+    :after ess-r-mode
     :bind
     (:map
-     (ess-r-mode-map
-      ("%" . gwb-essr-insert-pipe-maybe))
-     (inferior-ess-r-mode-map
-      ("%" . gwb-essr-insert-pipe-maybe))))
+     ess-r-mode-map
+      ("%" . gwb-essr-insert-pipe-maybe)
+      ("M-TAB" . gwb-essr-toggle-function-hiding)
+    :map
+    inferior-ess-r-mode-map
+      ("%" . gwb-essr-insert-pipe-maybe)
+      ("M-TAB" . gwb-essr-toggle-function-hiding)))
 
 #+end_src
 
