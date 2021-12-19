@@ -8,6 +8,14 @@
 ;; - need to use (beginning-of-defun). Requires setting `beginning-of-defun-function`
 ;;  which contains a value defined in ess.
 
+
+;; ============ Configure inferior-ess-r-mode
+
+
+(defun gwb-essr-configure-iess ()
+  (company-mode)
+  (setq-local indent-line-function #'ess-r-indent-line))
+
 ;; ============ Folding
 
 (setq end-args-options '("){" ")" ") {"))
