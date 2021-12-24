@@ -593,10 +593,11 @@ Company does a lot of things:
 #+end_src
 
 #+begin_src emacs-lisp
-(use-package ivy-rich
-:ensure t
-:init (ivy-rich-mode 1)
-)
+  (use-package ivy-rich
+  :ensure t
+  :demand t
+  :init (ivy-rich-mode 1)
+  )
 #+end_src
 
 #+begin_src emacs-lisp
@@ -884,9 +885,9 @@ For `python-mode`, the config is pretty straightforward. I configure TAB to use 
 #+begin_src emacs-lisp
     (use-package python
       :ensure nil
-      :bind
-      (:map python-mode-map
-            ("TAB" . gwb-indent-for-tab-command))
+      ;:bind
+      ;(:map python-mode-map
+      ;      ("TAB" . gwb-indent-for-tab-command))
       :config
       (setq python-shell-interpreter "ipython3")
       ;(setq python-shell-interpreter-args "-i --simple-prompt")
