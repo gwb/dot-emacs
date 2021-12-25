@@ -337,13 +337,14 @@ TODO: make hydras for manipulating windows
 ** Projectile mode
 
 #+begin_src emacs-lisp
-    (use-package projectile
-      :ensure t
-      :bind-keymap
-      ("C-c p" . projectile-command-map)
-      :config
-      (projectile-mode +1)
-      (setq projectile-completion-system 'ivy))
+      (use-package projectile
+        :ensure t
+        :bind-keymap
+        ("C-c p" . projectile-command-map)
+        :config
+        (projectile-mode +1)
+        ;(setq projectile-completion-system 'ivy)
+        )
     
 #+end_src
 
@@ -362,12 +363,12 @@ TODO: make hydras for manipulating windows
 	- (bind-key [remap projectile-grep] 'projectile-grep projectile-mode-map))
    
 #+BEGIN_SRC emacs-lisp
-  (use-package counsel-projectile
-    :after (counsel projectile)
-    :ensure t
-    :config
-    (counsel-projectile-mode)
-    (define-key projectile-mode-map [remap projectile-grep] nil))
+  ;; (use-package counsel-projectile
+  ;;   :after (counsel projectile)
+  ;;   :ensure t
+  ;;   :config
+  ;;   (counsel-projectile-mode)
+  ;;   (define-key projectile-mode-map [remap projectile-grep] nil))
 #+END_SRC
 
 * Org-mode
@@ -551,6 +552,69 @@ This is function will be bound to TAB in my personal keymap
       (org-edit-src-exit)))
 #+end_src
 
+* Vertico | Orderless | Consult | Marginalia
+#+begin_src emacs-lisp
+  (use-package vertico
+    :init
+    (vertico-mode))
+
+  (use-package vertico-directory
+    :after vertico
+    :ensure nil
+    ;; More convenient directory navigation commands
+    :bind (:map vertico-map
+                ("RET" . vertico-directory-enter)
+                ("DEL" . vertico-directory-delete-char)
+                ("M-DEL" . vertico-directory-delete-word))
+    ;; Tidy shadowed file names
+    :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+
+  ;; allows vertico to sort by history position
+  (use-package savehist
+    :init
+    (savehist-mode))
+
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package orderless
+    :init
+    (setq completion-styles '(orderless)
+          completion-category-defaults nil
+          completion-category-overrides '((file (styles partial-completion)))))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package marginalia
+    :init
+    (marginalia-mode)
+    :bind
+    (:map minibuffer-local-map
+          ("M-A" . marginalia-cycle)))
+#+end_src
+
+
+#+begin_src emacs-lisp
+  (use-package embark
+    :bind
+    (("C-." . embark-act)
+     ("M-." . embark-dwim)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package consult
+    :bind
+    (("C-x b" . consult-buffer)
+     ("M-y" . consult-yank-pop)
+     ("M-g g" . consult-goto-line)
+     ("M-g o" . consult-outline)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package embark-consult
+    :after (embark consult))
+#+end_src
+
 * Ivy / counsel
 
 Company does a lot of things:
@@ -560,49 +624,51 @@ Company does a lot of things:
 
 #+begin_src emacs-lisp
 
-  (use-package gwb-ivy
-  :after counsel
-  :demand t
-  :bind (("M-s z" . gwb-counsel-fzf)))
+  ;; (use-package gwb-ivy
+  ;; :after counsel
+  ;; :demand t
+  ;; :bind (("M-s z" . gwb-counsel-fzf)))
 
 #+end_src
 
 #+begin_src emacs-lisp
-    (use-package counsel
-      :after ivy
-      :ensure t
-      :demand t
-      :bind (("M-x" . counsel-M-x)
-             ("C-x C-f" . counsel-find-file)
-             ("C-h f" . counsel-describe-function)
-             ("M-y" . counsel-yank-pop)))
+  ;; (use-package counsel
+  ;;   :after ivy
+  ;;   :ensure t
+  ;;   :demand t
+  ;;   :bind (("M-x" . counsel-M-x)
+  ;;          ("C-x C-f" . counsel-find-file)
+  ;;          ("C-h f" . counsel-describe-function)
+  ;;          ("M-y" . counsel-yank-pop)))
 #+end_src
 
 #+begin_src emacs-lisp
-  (use-package ivy
-    :ensure t
-    :demand t
-    :bind (:map ivy-minibuffer-map
-		("C-j" . ivy-immediate-done)
-		("RET" . ivy-alt-done))
-    :config
-    (ivy-mode 1)
-    (setq ivy-initial-inputs-alist nil)
-    (setq ivy-use-virtual-buffers t)
-    (setq ivy-count-format "(%d/%d) "))
+  ;; (use-package ivy
+  ;;   :ensure t
+  ;;   :demand t
+  ;;   :bind (:map ivy-minibuffer-map
+  ;; 	      ("C-j" . ivy-immediate-done)
+  ;; 	      ("RET" . ivy-alt-done))
+  ;;   :config
+  ;;   (ivy-mode 1)
+  ;;   (setq ivy-initial-inputs-alist nil)
+  ;;   (setq ivy-use-virtual-buffers t)
+  ;;   (setq ivy-count-format "(%d/%d) "))
 #+end_src
 
 #+begin_src emacs-lisp
-  (use-package ivy-rich
-  :ensure t
-  :demand t
-  :init (ivy-rich-mode 1)
-  )
+  ;; (use-package ivy-rich
+  ;; :ensure t
+  ;; :demand t
+  ;; :init (ivy-rich-mode 1)
+  ;; )
 #+end_src
 
 #+begin_src emacs-lisp
-(use-package ivy-hydra)
+;(use-package ivy-hydra)
 #+end_src
+
+* (w) grep 
 
 Make grep buffer writable. Allows one to edit occur buffers by:
 - Running C-x C-q to make occur buffer writable
