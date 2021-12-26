@@ -30,6 +30,7 @@
   (global-set-key (kbd "M-<down>") 'scroll-other-window)
   (global-set-key (kbd "M-<up>") 'scroll-other-window-down)
   (setq eshell-cmpl-ignore-case t) ;; ignore case when completing filename
+  
 #+END_SRC
 
 ** Theming and fonts
@@ -581,7 +582,10 @@ This is function will be bound to TAB in my personal keymap
     :init
     (setq completion-styles '(orderless)
           completion-category-defaults nil
-          completion-category-overrides '((file (styles partial-completion)))))
+          completion-category-overrides '((file (styles partial-completion))
+                                          (symbol (styles orderless-strict-leading-initialism
+                                                          orderless-literal
+                                                          orderless-regexp)))))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -603,16 +607,34 @@ This is function will be bound to TAB in my personal keymap
 
 #+begin_src emacs-lisp
   (use-package consult
+    :init
+    (recentf-mode)
     :bind
     (("C-x b" . consult-buffer)
      ("M-y" . consult-yank-pop)
      ("M-g g" . consult-goto-line)
      ("M-g o" . consult-outline)))
+
+
 #+end_src
 
 #+begin_src emacs-lisp
   (use-package embark-consult
     :after (embark consult))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package corfu
+    :init
+    (corfu-global-mode)
+    :custom
+    (corfu-cycle t)
+    :bind
+    (:map corfu-map
+          ("TAB" . corfu-next)
+          ([tab] . corfu-next)
+          ("S-TAB" . corfu-previous)
+          ([backtab] . corfu-previous)))
 #+end_src
 
 * Ivy / counsel
@@ -693,15 +715,16 @@ Make grep buffer writable. Allows one to edit occur buffers by:
 * Company
 
 #+begin_src emacs-lisp
-  (use-package company
-    :hook ((c-mode . company-mode)
-           (ess-r-mode . company-mode)
-           (inferior-ess-r-mode . company-mode))
-    :bind (:map company-active-map
-                ("C-n" . company-select-next-or-abort)
-                ("C-p" . company-select-previous-or-abort))
-    :config
-    (setq company-idle-delay nil))
+    (use-package company
+      :hook ((c-mode . company-mode)
+             ;(ess-r-mode . company-mode)
+             ;(inferior-ess-r-mode . company-mode)
+             )
+      :bind (:map company-active-map
+                  ("C-n" . company-select-next-or-abort)
+                  ("C-p" . company-select-previous-or-abort))
+      :config
+      (setq company-idle-delay nil))
 #+end_src
 
 
@@ -848,25 +871,25 @@ ESS is (used to be?) fiddly to setup correctly.
 
 
 #+begin_src emacs-lisp
-    (use-package ess
-      :defer t)
+      (use-package ess
+        :defer t)
 
-    (use-package ess-r-mode
-      :hook
-      ((ess-r-mode . hs-minor-mode))
-      :bind
-      (:map
-       ess-r-mode-map
-       ("TAB" . gwb-indent-for-tab-command)
-       ("_" . ess-insert-assign)
-       ("M-[" . hs-hide-all)
-       ("M-]" . hs-show-all)
-       :map
-       inferior-ess-r-mode-map
-       ("TAB" . gwb-indent-for-tab-command)
-       ("_" . ess-insert-assign)
-       ("M-[" . hs-hide-all)
-       ("M-]" . hs-show-all)))
+      (use-package ess-r-mode
+        :hook
+        ((ess-r-mode . hs-minor-mode))
+        :bind
+        (:map
+         ess-r-mode-map
+         ;("TAB" . gwb-indent-for-tab-command)
+         ("_" . ess-insert-assign)
+         ("M-[" . hs-hide-all)
+         ("M-]" . hs-show-all)
+         :map
+         inferior-ess-r-mode-map
+         ;("TAB" . gwb-indent-for-tab-command)
+         ("_" . ess-insert-assign)
+         ("M-[" . hs-hide-all)
+         ("M-]" . hs-show-all)))
 
 
 #+end_src
@@ -876,19 +899,21 @@ Below are my customizations for ESS. A few comments:
 
 
 #+begin_src emacs-lisp
-    (use-package gwb-essr
-      :after ess-r-mode
-      :hook
-       ((inferior-ess-r-mode . gwb-essr-configure-iess))
-      :bind
-      (:map
-       ess-r-mode-map
-        ("%" . gwb-essr-insert-pipe-maybe)
-        ("M-TAB" . gwb-essr-toggle-hide-function)
-      :map
-      inferior-ess-r-mode-map
-        ("%" . gwb-essr-insert-pipe-maybe)
-        ("M-TAB" . gwb-essr-toggle-hide-function)))
+  (use-package gwb-essr
+    :after ess-r-mode
+    :hook
+    ((inferior-ess-r-mode . gwb-essr-configure-iess))
+    :bind
+    (:map
+     ess-r-mode-map
+     ("%" . gwb-essr-insert-pipe-maybe)
+     ("M-TAB" . gwb-essr-toggle-hide-function)
+     :map
+     inferior-ess-r-mode-map
+     ("%" . gwb-essr-insert-pipe-maybe)
+     ("M-TAB" . gwb-essr-toggle-hide-function))
+    :config
+    (advice-add 'ess-r-object-completion :filter-return #'gwb-essr--add-docsig))
 
 #+end_src
 
@@ -949,15 +974,15 @@ My python uses the `python-mode` as a major mode, but relies heavily on the mino
 For `python-mode`, the config is pretty straightforward. I configure TAB to use my custom completion command (based on `company`), and configure the shels to use.
 
 #+begin_src emacs-lisp
-    (use-package python
-      :ensure nil
-      ;:bind
-      ;(:map python-mode-map
-      ;      ("TAB" . gwb-indent-for-tab-command))
-      :config
-      (setq python-shell-interpreter "ipython3")
-      ;(setq python-shell-interpreter-args "-i --simple-prompt")
-      )
+  (use-package python
+    :ensure nil
+    ;:bind
+    ;(:map python-mode-map
+    ;      ("TAB" . gwb-indent-for-tab-command))
+    :config
+    (setq python-shell-interpreter "ipython3")
+    (setq python-shell-interpreter-args "-i --simple-prompt")
+    )
 
 #+end_src
 

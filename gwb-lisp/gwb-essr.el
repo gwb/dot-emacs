@@ -9,14 +9,75 @@
 ;;  which contains a value defined in ess.
 
 
-;; ============ Configure inferior-ess-r-mode
+;;; ============ Configure inferior-ess-r-mode
 
 
 (defun gwb-essr-configure-iess ()
   (company-mode)
   (setq-local indent-line-function #'ess-r-indent-line))
 
-;; ============ Folding
+;;; ============ Docstring signature 
+
+(defun gwb-essr--docsig (funname)
+  "Basically the same as `ess-r-eldoc-function' from
+`ess-r-completion.el' except it takes a FUNNAME as argument"
+  (when (and eldoc-mode ess-can-eval-in-background)
+    (let* ((proc (ess-get-next-available-process)))
+      (when funname
+        (let* ((args (ess-function-arguments funname proc))
+               (bargs (cadr args))
+               (doc (mapconcat (lambda (el)
+                                 (if (equal (car el) "...")
+                                     "..."
+                                   (concat (car el) "=" (cdr el))))
+                               bargs ", "))
+               (margs (nth 2 args))
+               (W (- (window-width (minibuffer-window)) (+ 4 (length funname))))
+               (multiline (eq t eldoc-echo-area-use-multiline-p))
+               doc1)
+          (when doc
+            (setq doc (ess-eldoc-docstring-format funname doc (not multiline)))
+            (when (or multiline (and margs (< (length doc1) W)))
+              (setq doc1 (concat doc (propertize "  || " 'face font-lock-function-name-face)))
+              (while (and margs (< (length doc1) W))
+                (let ((head (pop margs)))
+                  (unless (assoc head bargs)
+                    (setq doc doc1
+                          doc1 (concat doc1 head  "=, ")))))
+              (when (equal (substring doc -2) ", ")
+                (setq doc (substring doc 0 -2)))
+              (when (and margs (< (length doc) W))
+                (setq doc (concat doc " {--}"))))
+            doc))))))
+
+(defun gwb-essr-docsig (funname)
+  (substring-no-properties (gwb-essr--docsig funname)))
+
+
+(defun gwb-essr--add-docsig (completions)
+  (when completions
+    (append completions (list :company-docsig #'gwb-essr-docsig))))
+
+
+;; (advice-add 'ess-r-object-completion :filter-return #'gwb-essr--add-docsig)
+
+
+
+;; (defun gwb-ess-r-object-completion ()
+;;   "Return completions at point in a format required by `completion-at-point-functions'."
+;;   (if (ess-make-buffer-current)
+;;       (let* ((funstart (cdr (ess--fn-name-start)))
+;;              (completions (ess-r-get-rcompletions funstart))
+;;              (token (pop completions)))
+;;         (when completions
+;;           (list (- (point) (length token)) (point)
+;;                 completions)))
+;;     (when (string-match "complete" (symbol-name last-command))
+;;       (message "No ESS process associated with current buffer")
+;;       nil)))
+
+
+;;; ============ Folding
 
 (setq end-args-options '("){" ")" ") {"))
 
@@ -89,7 +150,7 @@ char occurs in between, don't move, and return nil."
       (gwb-essr-hide-function))))
 
 
-;; ============ insert shortcuts
+;;; ============ insert shortcuts
 
 (defun gwb-essr--insert-pipe ()
   (insert "%>%"))
