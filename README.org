@@ -145,8 +145,8 @@ The following is David's special unicode input mode:
 
 #+BEGIN_SRC emacs-lisp
 ;; (add-to-list 'load-path "~/.emacs.d/inputs")
-(add-to-list 'load-path (thread-last user-emacs-directory (expand-file-name "inputs")))
-(require 'darais-input)
+;;(add-to-list 'load-path (thread-last user-emacs-directory (expand-file-name "inputs")))
+;;(require 'darais-input)
 #+END_SRC
 
 ** Fixing basic osx related issues 
