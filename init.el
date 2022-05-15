@@ -2,7 +2,12 @@
 (require 'package)
 
 ;; makes sure emacs doesn't do so much damn GC
-(setq gc-cons-threshold (* 80 1024 1024))
+(setq gc-cons-threshold 402653184
+      gc-cons-percentage 0.6)
+
+(add-hook 'after-init-hook #'(lambda ()
+                               (setq gc-cons-threshold (* 80 1024 1024)
+                                     gc-cons-percentage 0.3)))
 
 ;; faster load time.. otherwise load packages twice
 (setq package-enable-at-startup nil)
