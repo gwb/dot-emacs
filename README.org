@@ -249,10 +249,12 @@ mapped to C-s C-w, the behavior of which I don't like."
     ;; changes highlighting for active and passive matches
     (set-face-attribute 'lazy-highlight nil :background "tan1")
     (set-face-attribute 'isearch nil :background "SkyBlue1")
+
     ;; spaces in search separate different search terms instead
     ;; instad of being interpreted literally
     (setq search-whitespace-regexp ".*")
     (setq isearch-lax-whitespace t)
+    
     :bind
     (:map isearch-mode-map
           ("M-m" . gwb/isearch-yank-region)
@@ -312,15 +314,17 @@ TODO: make hydras for manipulating windows
   Usage: M-x try
 
 #+BEGIN_SRC emacs-lisp
-    (use-package try
-      :ensure t)
+  (use-package try
+    :ensure t
+    :commands try
+    )
 #+END_SRC
 
 * Magit 
 
 #+BEGIN_SRC emacs-lisp
   (use-package magit
-    :ensure t
+    :ensure t  
     :bind ("C-x g" . 'magit-status))
 #+END_SRC
 
@@ -709,7 +713,7 @@ Make grep buffer writable. Allows one to edit occur buffers by:
 - ... making whatever change
 - Running C-x C-s to save changes. The changes will be written in to the source files.
 #+begin_src emacs-lisp
-(use-package wgrep)
+(use-package wgrep :defer 5)
 #+end_src
 
 * Undoo-tree
@@ -767,22 +771,6 @@ autocomplete paths with many files
     :after company)
 #+end_src
 
-** FIX
-#+begin_src emacs-lisp
-  ;; (use-package gwb-indent
-  ;;   :after company
-  ;; :bind (:map company-mode-map
-  ;;             ("TAB" . gwb-indent-for-tab-command)))
-#+end_src
-
-
-* Semantic
-
-=> Not working for now.. need to find a fix?
-#+begin_src emacs-lisp
-  ;(use-package semantic
-  ;  :hook (c-mode . semantic-mode))
-#+end_src
 
 * Helpful
 
@@ -802,31 +790,43 @@ autocomplete paths with many files
 #+begin_src emacs-lisp
   (use-package yasnippet
     :ensure t
-    :disable t
+    :disabled t
     :init
       (yas-global-mode 1))
 #+end_src
 
 * Programming languages
+
+** Inherited by all
+#+begin_src emacs-lisp
+  (add-hook 'prog-mode-hook #'(lambda () (setq-local tab-always-indent 'complete)))
+#+end_src
+
 ** Misc languages
 
 I have played around, at some point or another, with many programming languages. This section deals with the languages for which the config is minimal (or non-existent). 
 
 #+begin_src emacs-lisp
-  (use-package julia-mode 
-    :ensure t)
+  (use-package julia-mode
+    :ensure t
+    :mode "\\.jl\\'")
 
   (use-package markdown-mode
-    :ensure t)
+    :ensure t
+    :mode (("\\.md\\'" . markdown-mode)
+           ("\\.Rmd\\'" . markdown-mode)))
 
   (use-package elm-mode
-    :ensure t)
+    :ensure t
+    :mode "\\.elm\\'")
 
   (use-package haskell-mode
-  :ensure t
-  :hook (haskell-mode . interactive-haskell-mode))
+    :ensure t
+    :mode "\\.hs\\'"
+    :hook (haskell-mode . interactive-haskell-mode))
 
   (use-package rust-mode
+    :mode "\\.rs\\'"
     :init
     (add-hook 'rust-mode (lambda () (setq indent-tabs-mode nil))))
 #+end_src
@@ -842,6 +842,7 @@ I have played around, at some point or another, with many programming languages.
 
   (use-package racket-mode 
     :ensure t
+    :mode "\\.rkt\\'"
     :config
     (setq tab-always-indent 'complete)
     (require 'racket-xp)
@@ -937,6 +938,7 @@ Below are my customizations for ESS. A few comments:
 ** C / C++
 #+begin_src emacs-lisp
   (use-package cc-mode
+    :defer t
     :config
     (setq c-default-style "linux")
     (setq c-basic-offset 4))
@@ -947,6 +949,7 @@ Below are my customizations for ESS. A few comments:
     :hook ((c++-mode . eglot-ensure)))
 
   (use-package eglot
+    :defer t
     :config
     (add-to-list 'eglot-server-programs '(c++-mode . ("/usr/local/opt/llvm/bin/clangd"))))
 #+end_src
@@ -1002,6 +1005,8 @@ For `python-mode`, the config is pretty straightforward. I configure TAB to use 
 #+begin_src emacs-lisp
   (use-package python
     :ensure nil
+    :mode ("\\.py\\'" . python-mode)
+    :interpreter ("python" "python3")
     ;:bind
     ;(:map python-mode-map
     ;      ("TAB" . gwb-indent-for-tab-command))
@@ -1046,6 +1051,7 @@ Useful keybindings for terminal:
 #+begin_src emacs-lisp
   (use-package term
     :ensure nil
+    :commands term
     :config
     (setq term-prompt-regexp "^[^#$%>\\n]*[#$%>] *"))
 
@@ -1059,13 +1065,15 @@ Useful keybindings for terminal:
 Spotify custom utilities
 
 #+begin_src emacs-lisp
-(use-package elspot)
+  (use-package elspot
+    :commands hydra-spotify/body)
 #+end_src
 
 Hugo utilities
 
 #+begin_src emacs-lisp
-(use-package gwb-hugo) ;; allows to quickly start and kill hugo servers
+  (use-package gwb-hugo
+    :commands gwb-run-hugo-server) ;; allows to quickly start and kill hugo servers
 #+end_src
 
 Mark word
