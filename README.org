@@ -30,8 +30,14 @@
   (global-set-key (kbd "M-<down>") 'scroll-other-window)
   (global-set-key (kbd "M-<up>") 'scroll-other-window-down)
   (setq eshell-cmpl-ignore-case t) ;; ignore case when completing filename
-  
+
 #+END_SRC
+
+** Re-enable disabled commands
+
+#+begin_src emacs-lisp
+  (put 'narrow-to-region 'disabled nil)
+#+end_src
 
 ** Theming and fonts
 Most frequently used themes are:
@@ -557,18 +563,24 @@ This is function will be bound to TAB in my personal keymap
 #+begin_src emacs-lisp
   (use-package vertico
     :init
+    (setq completion-in-region-function
+          (lambda (&rest args)
+            (apply (if vertico-mode
+                       #'consult-completion-in-region
+                     #'completion--in-region)
+                   args)))
     (vertico-mode))
 
-  (use-package vertico-directory
-    :after vertico
-    :ensure nil
-    ;; More convenient directory navigation commands
-    :bind (:map vertico-map
-                ("RET" . vertico-directory-enter)
-                ("DEL" . vertico-directory-delete-char)
-                ("M-DEL" . vertico-directory-delete-word))
-    ;; Tidy shadowed file names
-    :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+    (use-package vertico-directory
+      :after vertico
+      :ensure nil
+      ;; More convenient directory navigation commands
+      :bind (:map vertico-map
+                  ("RET" . vertico-directory-enter)
+                  ("DEL" . vertico-directory-delete-char)
+                  ("M-DEL" . vertico-directory-delete-word))
+      ;; Tidy shadowed file names
+      :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
   ;; allows vertico to sort by history position
   (use-package savehist
@@ -788,10 +800,11 @@ autocomplete paths with many files
 
 * Yasnippet
 #+begin_src emacs-lisp
-(use-package yasnippet
-  :ensure t
-  :init
-    (yas-global-mode 1))
+  (use-package yasnippet
+    :ensure t
+    :disable t
+    :init
+      (yas-global-mode 1))
 #+end_src
 
 * Programming languages
@@ -837,8 +850,9 @@ I have played around, at some point or another, with many programming languages.
   (use-package slime
     :commands slime
     :init
-    (load (expand-file-name "~/.quicklisp/slime-helper.el"))
-    (setq inferior-lisp-program "sbcl"))
+    (setq inferior-lisp-program "sbcl")
+    :config
+    (load (expand-file-name "~/.quicklisp/slime-helper.el")))
 
   (use-package emacs-lisp-mode
     :hook (emacs-lisp-mode . hs-minor-mode)
@@ -899,30 +913,42 @@ Below are my customizations for ESS. A few comments:
 
 
 #+begin_src emacs-lisp
-  (use-package gwb-essr
-    :after ess-r-mode
-    :hook
-    ((inferior-ess-r-mode . gwb-essr-configure-iess))
-    :bind
-    (:map
-     ess-r-mode-map
-     ("%" . gwb-essr-insert-pipe-maybe)
-     ("M-TAB" . gwb-essr-toggle-hide-function)
-     :map
-     inferior-ess-r-mode-map
-     ("%" . gwb-essr-insert-pipe-maybe)
-     ("M-TAB" . gwb-essr-toggle-hide-function))
-    :config
-    (advice-add 'ess-r-object-completion :filter-return #'gwb-essr--add-docsig))
+    (use-package gwb-essr
+      :after ess-r-mode
+      ;; :demand t
+      :commands (gwb-essr-configure-iess gwb-essr-configure-ess-r)
+      :hook
+      ((inferior-ess-r-mode . gwb-essr-configure-iess)
+       (ess-r-mode . gwb-essr-configure-ess-r))
+      :bind
+      (:map
+       ess-r-mode-map
+       ("%" . gwb-essr-insert-pipe-maybe)
+       ("M-TAB" . gwb-essr-toggle-hide-function)
+       :map
+       inferior-ess-r-mode-map
+       ("%" . gwb-essr-insert-pipe-maybe)
+       ("M-TAB" . gwb-essr-toggle-hide-function))
+      :config
+      (advice-add 'ess-r-object-completion :filter-return #'gwb-essr--add-docsig))
 
 #+end_src
 
-** C
+** C / C++
 #+begin_src emacs-lisp
   (use-package cc-mode
     :config
     (setq c-default-style "linux")
     (setq c-basic-offset 4))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package c++-mode
+    :hook ((c++-mode . eglot-ensure)))
+
+  (use-package eglot
+    :config
+    (add-to-list 'eglot-server-programs '(c++-mode . ("/usr/local/opt/llvm/bin/clangd"))))
 #+end_src
 ** Latex
 
@@ -980,6 +1006,7 @@ For `python-mode`, the config is pretty straightforward. I configure TAB to use 
     ;(:map python-mode-map
     ;      ("TAB" . gwb-indent-for-tab-command))
     :config
+    ;; => uncomment two below
     (setq python-shell-interpreter "ipython3")
     (setq python-shell-interpreter-args "-i --simple-prompt")
     )
@@ -990,17 +1017,22 @@ For `python-mode`, the config is pretty straightforward. I configure TAB to use 
 For `elpy-mode`, the config requires a bit more explaining. The Elpy package provides the `elpy-enable' command which provides a wrapper around the `elpy-mode' command which actually activates the minor mode. The minor mode command `elpy-mode` does a few things in its body, including setting up some special configs for `company`. One thing it does, which I don't like, is to setup autocompletion by setting `(setq company-idle-delay 0.1)`. So I'm basically writing as small hook around `elpy-mode` to deactivate auto-complete every time elpy-mode is called.
 
 #+begin_src emacs-lisp
-  (defun gwb-no-company-idle nil
-    (setq company-idle-delay nil))
+   (defun gwb-no-company-idle nil
+     (setq company-idle-delay nil))
 
-  (use-package elpy
-    :hook ((elpy-mode . gwb-no-company-idle)
-           (python-mode . elpy-enable))
-    :custom
-    (elpy-rpc-python-command "python3"))
-    ;;:init
-    ;;(elpy-enable))
-    ;;(setq python-shell-interpreter-args "-c exec('__import__(\\'readline\\')') -i"))
+  ;; (use-package elpy
+  ;;   :init
+  ;;   (elpy-enable))
+
+   ;; (use-package elpy
+   ;;   :hook ((elpy-mode . gwb-no-company-idle)
+   ;;          (python-mode . elpy-enable))
+   ;;   :custom
+   ;;   (elpy-rpc-python-command "python3")
+   ;;   )
+   ;;:init
+   ;;(elpy-enable))
+   ;;(setq python-shell-interpreter-args "-c exec('__import__(\\'readline\\')') -i"))
 #+end_src
 
 * terminals
@@ -1222,3 +1254,10 @@ Another custom keymap for keybindings that should not be overriden by major / mi
   ;; (define-key gwb-protected-keymap (kbd "TAB") 'gwb-indent-for-tab-command)
 #+end_src
 
+
+
+* Wrap up
+
+#+begin_src emacs-lisp
+  (setq gc-cons-threshold (* 8 1024 1024)) ; sets gc back to slightly smaller value
+#+end_src

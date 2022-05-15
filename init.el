@@ -1,6 +1,9 @@
 
 (require 'package)
 
+;; makes sure emacs doesn't do so much damn GC
+(setq gc-cons-threshold (* 80 1024 1024))
+
 ;; faster load time.. otherwise load packages twice
 (setq package-enable-at-startup nil)
 
@@ -28,4 +31,5 @@
 
 ;; loads config
 (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
+
 

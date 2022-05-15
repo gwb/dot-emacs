@@ -9,12 +9,24 @@
 ;;  which contains a value defined in ess.
 
 
+;;; ============ General variables
+
+(defvar gwb-essr-outline-regexp "###")
+
+
 ;;; ============ Configure inferior-ess-r-mode
 
-
 (defun gwb-essr-configure-iess ()
-  (company-mode)
+  ;; (company-mode)
   (setq-local indent-line-function #'ess-r-indent-line))
+
+(defun gwb-essr-configure-ess-r ()
+  (setq-local outline-regexp gwb-essr-outline-regexp)
+  (setq-local completion-at-point-functions
+              (-replace 'ess-r-package-completion
+                        'gwb-ess-r-package-completion
+                        completion-at-point-functions)))
+
 
 ;;; ============ Docstring signature 
 
@@ -57,6 +69,49 @@
 (defun gwb-essr--add-docsig (completions)
   (when completions
     (append completions (list :company-docsig #'gwb-essr-docsig))))
+
+
+;;; ============ Fixing some broken completion
+
+;; FIXME: probably want some sort of caching.
+(defun gwb-sync-installed-packages ()
+  "Returns a list of installed packages. Executes a call
+to external process."
+  (s-split-words (shell-command-to-string "Rscript -e 'cat(.packages(T))'")))
+
+;; FIXME: perhaps modify things to make it possible to use "any" R process
+;; for completion (even if not associated with this particular buffer)
+(defun gwb-ess-installed-packages ()
+  "Like `ess-installed-packages' but uses external call if buffer not currently
+associated with any process."
+  (if (not ess-current-process-name)
+      (gwb-sync-installed-packages)
+    (ess-installed-packages)))
+
+
+;; REPORT UPSTREAM: fixes ess-r-package-completion
+(defun gwb-ess-r-package-completion ()
+  "This function is almost identical to `ess-r-package-completion'
+exceps that:
+ (1) the first element of the returned list is set to `point'
+instead of `(ess-symbol-start)', which for some reason returns nil
+whenever called after `library('. This seems to fix completion.
+(2) it uses `gwb-ess-installed-packages' instead of `ess-installed-packages'.
+This makes it possible to get completion even in buffers with no associated
+R buffers.
+
+The rest of the docstring is reproduced from the original function:
+
+Return installed packages if in a call to library or require.
+Return format suitable for `completion-at-point-functions'."
+  (when (member (car (ess--fn-name-start))
+                '("library" "require"))
+    (list (or (ess-symbol-start) (point))
+          (point)
+          (gwb-ess-installed-packages)
+          :annotation-function
+          (lambda (_) " <pkg>"))))
+
 
 
 ;; (advice-add 'ess-r-object-completion :filter-return #'gwb-essr--add-docsig)
@@ -153,7 +208,7 @@ char occurs in between, don't move, and return nil."
 ;;; ============ insert shortcuts
 
 (defun gwb-essr--insert-pipe ()
-  (insert "%>%"))
+  (insert " %>%"))
 
 (defun gwb-essr--insert-in ()
   (insert "%in%"))
