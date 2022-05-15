@@ -215,36 +215,68 @@ Notes:
 ** isearch
 
 #+begin_src emacs-lisp
-  (defun gwb/region-text ()
-    (interactive)
-    (buffer-substring (region-beginning) (region-end)))
+  ;;   (defun gwb/region-text ()
+  ;;     (interactive)
+  ;;     (buffer-substring (region-beginning) (region-end)))
 
-  (defun gwb/isearch-yank-region ()
-    "Yanks the current active region to the isearch minibuffer.
-    The point is moved to the beginning of the region at the end of 
-    the operation, so the first match is always the current region."
-    (interactive)
-    (let ((word (gwb/region-text))
-          (end-word (region-end)))
-      (deactivate-mark)
-      (goto-char end-word)
-      (backward-word)
-      (isearch-yank-string word)))
+  ;;   (defun gwb/isearch-yank-region ()
+  ;;     "Yanks the current active region to the isearch minibuffer.
+  ;;     The point is moved to the beginning of the region at the end of 
+  ;;     the operation, so the first match is always the current region."
+  ;;     (interactive)
+  ;;     (let ((word (gwb/region-text))
+  ;;           (end-word (region-end)))
+  ;;       (deactivate-mark)
+  ;;       (goto-char end-word)
+  ;;       (backward-word)
+  ;;       (isearch-yank-string word)))
 
-  (defun gwb/isearch-yank-word-at-point ()
-    "Yanks the word at point to the isearch minibuffer. This is 
-intended to replace the functionality of `isearch-yank-word-or-char' 
-mapped to C-s C-w, the behavior of which I don't like."
-    (interactive)
-    (let ((word (word-at-point t)))
-      (forward-word)
-      (backward-word)
-      (isearch-yank-string word)))
+  ;;   (defun gwb/isearch-yank-word-at-point ()
+  ;;     "Yanks the word at point to the isearch minibuffer. This is 
+  ;; intended to replace the functionality of `isearch-yank-word-or-char' 
+  ;; mapped to C-s C-w, the behavior of which I don't like."
+  ;;     (interactive)
+  ;;     (let ((word (word-at-point t)))
+  ;;       (forward-word)
+  ;;       (backward-word)
+  ;;       (isearch-yank-string word)))
 
 #+end_src
 
 #+begin_src emacs-lisp
   (use-package isearch
+    :bind
+    (:map isearch-mode-map
+          ("M-m" . gwb/isearch-yank-region)
+          ([remap isearch-yank-word-or-char] . gwb/isearch-yank-word-at-point))
+
+    :init
+    ;; custom functions
+    (defun gwb/region-text ()
+      (interactive)
+      (buffer-substring (region-beginning) (region-end)))
+
+    (defun gwb/isearch-yank-region ()
+      "Yanks the current active region to the isearch minibuffer.
+      The point is moved to the beginning of the region at the end of 
+      the operation, so the first match is always the current region."
+      (interactive)
+      (let ((word (gwb/region-text))
+            (end-word (region-end)))
+        (deactivate-mark)
+        (goto-char end-word)
+        (backward-word)
+        (isearch-yank-string word)))
+
+    (defun gwb/isearch-yank-word-at-point ()
+      "Yanks the word at point to the isearch minibuffer. This is 
+       intended to replace the functionality of `isearch-yank-word-or-char' 
+       mapped to C-s C-w, the behavior of which I don't like."
+      (interactive)
+      (let ((word (word-at-point t)))
+        (forward-word)
+        (backward-word)
+        (isearch-yank-string word)))
     :config
     ;; changes highlighting for active and passive matches
     (set-face-attribute 'lazy-highlight nil :background "tan1")
@@ -253,12 +285,7 @@ mapped to C-s C-w, the behavior of which I don't like."
     ;; spaces in search separate different search terms instead
     ;; instad of being interpreted literally
     (setq search-whitespace-regexp ".*")
-    (setq isearch-lax-whitespace t)
-    
-    :bind
-    (:map isearch-mode-map
-          ("M-m" . gwb/isearch-yank-region)
-          ([remap isearch-yank-word-or-char] . gwb/isearch-yank-word-at-point)))
+    (setq isearch-lax-whitespace t))
 #+end_src
 
 * File navigation
