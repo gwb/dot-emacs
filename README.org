@@ -10,13 +10,14 @@
 ** Remove frills from interface + some customizations
    
 #+BEGIN_SRC emacs-lisp
-  (tool-bar-mode -1)
-  (menu-bar-mode -1)
+  ;; (tool-bar-mode -1)
+  ;; (menu-bar-mode -1)
   (fset 'yes-or-no-p 'y-or-n-p)
-  (scroll-bar-mode -1)
-  (setq inhibit-startup-screen t)
+  ;; (scroll-bar-mode -1)
+  ;; (setq inhibit-startup-screen t)
   (set-fill-column 80)
   (setq ring-bell-function 'ignore)
+  (setq initial-major-mode 'fundamental-mode)
 #+END_SRC
 
 ** Some better defaults
@@ -33,10 +34,22 @@
 
 #+END_SRC
 
+** Defer loading some libraries
+#+begin_src emacs-lisp
+  (use-package dash :defer t)
+  (use-package elisp-refs :defer t)
+  (use-package f :defer t)
+  (use-package ht :defer t)
+  (use-package s :defer t)
+
+
+
+#+end_src
 ** Re-enable disabled commands
 
 #+begin_src emacs-lisp
-  (put 'narrow-to-region 'disabled nil)
+  (setq disabled-command-function nil)
+  ;(put 'narrow-to-region 'disabled nil)
 #+end_src
 
 ** Theming and fonts
@@ -73,13 +86,14 @@ Most frequently used themes are:
 
 
 #+BEGIN_SRC emacs-lisp
-  ;(use-package monokai-theme :ensure t)
-  ;(load-theme 'monokai t)
+    ;(use-package monokai-theme :ensure t)
+    ;(load-theme 'monokai t)
 
-  (use-package doom-themes
-    ;:init (load-theme 'doom-monokai-classic t)
-    :init (load-theme 'doom-snazzy t)
-    :config (doom-themes-org-config))
+    (use-package doom-themes
+      ;:init (load-theme 'doom-monokai-classic t)
+      :init (load-theme 'doom-snazzy t)
+      :config
+      (doom-themes-org-config))
 #+END_SRC
 
 You must run (all-the-icons-install-fonts) one time after
@@ -258,8 +272,8 @@ Notes:
 
     (defun gwb/isearch-yank-region ()
       "Yanks the current active region to the isearch minibuffer.
-      The point is moved to the beginning of the region at the end of 
-      the operation, so the first match is always the current region."
+        The point is moved to the beginning of the region at the end of 
+        the operation, so the first match is always the current region."
       (interactive)
       (let ((word (gwb/region-text))
             (end-word (region-end)))
@@ -270,13 +284,38 @@ Notes:
 
     (defun gwb/isearch-yank-word-at-point ()
       "Yanks the word at point to the isearch minibuffer. This is 
-       intended to replace the functionality of `isearch-yank-word-or-char' 
-       mapped to C-s C-w, the behavior of which I don't like."
+         intended to replace the functionality of `isearch-yank-word-or-char' 
+         mapped to C-s C-w, the behavior of which I don't like."
       (interactive)
       (let ((word (word-at-point t)))
         (forward-word)
         (backward-word)
         (isearch-yank-string word)))
+
+    (defun gwb/goto-other-end ()
+      "If search forward, return to beginning of match. If search backward, do 
+  nothing (already goes to beginning automatically"
+      (if (< isearch-other-end (point))
+          (goto-char isearch-other-end)))
+
+    (defun gwb/isearch-exit ()
+      "Modifies the isearch-exit function to return to beginning of 
+  word if succesful match"
+      (interactive)
+      (if (and search-nonincremental-instead
+               (= 0 (length isearch-string)))
+          (let ((isearch-nonincremental t))
+            (isearch-edit-string)) ;; this calls isearch-done as well
+        (isearch-done))
+      (gwb/goto-other-end)
+      (isearch-clean-overlays))
+
+
+    (add-hook 'isearch-mode-hook
+              (lambda ()
+                (define-key isearch-mode-map "\r"
+                            'gwb/isearch-exit)))
+
     :config
     ;; changes highlighting for active and passive matches
     (set-face-attribute 'lazy-highlight nil :background "tan1")
@@ -351,7 +390,8 @@ TODO: make hydras for manipulating windows
 
 #+BEGIN_SRC emacs-lisp
   (use-package magit
-    :ensure t  
+    :ensure t
+    :defer 5
     :bind ("C-x g" . 'magit-status))
 #+END_SRC
 
@@ -410,92 +450,106 @@ TODO: make hydras for manipulating windows
 #+END_SRC
 
 * Org-mode
-** Basic config
-
-Loads org-mode
-
-(some configs require org to be loaded)
 
 #+begin_src emacs-lisp
-;(require 'org)
-#+end_src
 
-Indent mode
-#+begin_src emacs-lisp
-(add-hook 'org-mode-hook 'org-indent-mode)
-#+end_src
+  (use-package org
+    :defer t
+    :config
+    ;; indent mode
+    (add-hook 'org-mode-hook 'org-indent-mode)
 
-Line wrap 
+    ;; line wrap
+    (add-hook 'org-mode-hook
+              (lambda ()
+                (visual-line-mode 1)))
 
-#+begin_src emacs-lisp
-  (add-hook 'org-mode-hook
-	    (lambda ()
-	      (visual-line-mode 1)))
-#+end_src
+    ;; some basic directories
+    (setq org-directory "~/org")
+    (setq org-default-notes-file "~/org/refile.org")
+    (setq org-agenda-files (quote ("~/org")))
+
+    ;;keybindings
+    (global-set-key (kbd "C-c a") 'org-agenda)
+    (global-set-key (kbd "C-c b") 'org-switchb)
+    (global-set-key (kbd "C-c l") 'org-store-link)
+    (global-set-key (kbd "C-c i") 'org-indent-mode)
+    (global-set-key (kbd "C-c c") 'org-capture)
+
+    ;; some basic configs
+    (setq org-loop-over-headlines-in-active-region t)
+    (setq org-log-done t)
+    (setq org-archive-mark-done nil)
+    (setq org-archive-location "~/org/archive/%s_archive::")
+
+    ;; custom keywords + selection
+    (setq org-todo-keywords
+          '((sequence "TODO(t)" "|" "POSTPONED(p)" "CANCELLED(c)" "DONE(d)")
+            (sequence "IDEA(i)" "|" "IMPLEMENTED")
+            (sequence "TO-READ(r)" "|" "READ")))
+
+    (setq org-use-fast-todo-selection t)
 
 
-Basic directories
+    ;; fonts
 
-#+BEGIN_SRC emacs-lisp
-(setq org-directory "~/org")
-(setq org-default-notes-file "~/org/refile.org")
-(setq org-agenda-files (quote ("~/org")))
-#+END_SRC
+    (defun gwb/org-font-setup ()
+      (dolist (face '((org-level-1 . 1.5)
+                      (org-level-2 . 1.3)
+                      (org-level-3 . 1.1)
+                      (org-level-4 . 1.0)
+                      (org-level-5 . 1.1)
+                      (org-level-6 . 1.1)
+                      (org-level-7 . 1.1)
+                      (org-level-8 . 1.1)))
+        (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
 
-keybindings
+      ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+      (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
+      (set-face-attribute 'org-table nil    :inherit 'fixed-pitch)
+      (set-face-attribute 'org-formula nil  :inherit 'fixed-pitch)
+      (set-face-attribute 'org-code nil     :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-table nil    :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+      (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+      (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch))
 
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c a") 'org-agenda)
-(global-set-key (kbd "C-c b") 'org-switchb)
-(global-set-key (kbd "C-c l") 'org-store-link)
-(global-set-key (kbd "C-c i") 'org-indent-mode)
-(global-set-key (kbd "C-c c") 'org-capture)
-#+END_SRC
+    (defun gwb/org-font-setup-daemon (frame)
+      (gwb/org-font-setup))
 
+    (add-hook 'after-make-frame-functions 'gwb/org-font-setup-daemon)
 
-Setting up custom keywords + selection
+    (gwb/org-font-setup)
 
-#+BEGIN_SRC emacs-lisp
-(setq org-todo-keywords
-      '((sequence "TODO(t)" "|" "POSTPONED(p)" "CANCELLED(c)" "DONE(d)")
-	(sequence "IDEA(i)" "|" "IMPLEMENTED")
-	(sequence "TO-READ(r)" "|" "READ")))
+    ;; capture
 
-(setq org-use-fast-todo-selection t)
-#+END_SRC
+    (setq org-capture-templates
+          (quote (("t" "todo" entry (file+headline "~/org/refile.org" "Tasks")
+                   "* TODO %?\n %i\n (%U) %a")
+                  ("b" "book to read" entry (file+headline "~/org/books.org" "To read")
+                   "* TO-READ %?\n %i\n")
+                  ("i" "idea" entry (file+headline "~/org/refile.org" "Ideas")
+                   "* IDEA %?\n %i\n")
+                  ("n" "note" entry (file+headline "~/org/refile.org" "Notes")
+                   "* %? :NOTE:\n (%U) %a"))))
 
-** fonts
+    ;; refiling
+    (setq org-refile-targets (quote ((nil :maxlevel . 9)				 
+                                     (org-agenda-files :maxlevel . 9))))
 
-#+begin_src emacs-lisp
-  (defun gwb/org-font-setup ()
-    (dolist (face '((org-level-1 . 1.5)
-		    (org-level-2 . 1.3)
-		    (org-level-3 . 1.1)
-		    (org-level-4 . 1.0)
-		    (org-level-5 . 1.1)
-		    (org-level-6 . 1.1)
-		    (org-level-7 . 1.1)
-		    (org-level-8 . 1.1)))
-      (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
+    (setq org-refile-use-outline-path 'file)
+    (setq org-goto-interface 'outline-path-completion)
+    (setq org-outline-path-complete-in-steps nil)
+    (setq org-refile-allow-creating-parent-nodes 'confirm)
 
-    ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-    (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
-    (set-face-attribute 'org-table nil    :inherit 'fixed-pitch)
-    (set-face-attribute 'org-formula nil  :inherit 'fixed-pitch)
-    (set-face-attribute 'org-code nil     :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-table nil    :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch))
-
-  (defun gwb/org-font-setup-daemon (frame)
-    (gwb/org-font-setup))
-
-  (add-hook 'after-make-frame-functions 'gwb/org-font-setup-daemon)
-
-  (gwb/org-font-setup)
-
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((R . t)
+       (emacs-lisp . t)
+       (dot . t)
+       (latex . t)))
+    )
 #+end_src
 
 ** Org-bullet
@@ -509,86 +563,13 @@ Setting up custom keywords + selection
     (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 #+end_src
 
-** Archiving
-
-#+begin_src emacs-lisp
-(setq org-archive-mark-done nil)
-(setq org-archive-location "~/org/archive/%s_archive::")
-#+end_src
-
-** Capture & Refiling
-
-org-capture templates
-
-#+BEGIN_SRC emacs-lisp
-(setq org-capture-templates
-      (quote (("t" "todo" entry (file+headline "~/org/refile.org" "Tasks")
-	       "* TODO %?\n %i\n (%U) %a")
-	      ("b" "book to read" entry (file+headline "~/org/books.org" "To read")
-	       "* TO-READ %?\n %i\n")
-	      ("i" "idea" entry (file+headline "~/org/refile.org" "Ideas")
-	       "* IDEA %?\n %i\n")
-	      ("n" "note" entry (file+headline "~/org/refile.org" "Notes")
-	       "* %? :NOTE:\n (%U) %a"))))
-#+END_SRC
-
-Refiling settings
-
-#+begin_src emacs-lisp
-(setq org-refile-targets (quote ((nil :maxlevel . 9)				 
-                                 (org-agenda-files :maxlevel . 9))))
-
-(setq org-refile-use-outline-path 'file)
-(setq org-goto-interface 'outline-path-completion)
-(setq org-outline-path-complete-in-steps nil)
-(setq org-refile-allow-creating-parent-nodes 'confirm)
-#+end_src
 
 ** Babel
 
 #+BEGIN_SRC emacs-lisp
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((R . t)
-     (emacs-lisp . t)
-     (dot . t)
-     (latex . t)))
+
 #+END_SRC
 
-** Simple customization
-
-Batch apply operation to subtree:
-  Allows to quickly apply an action over all headlines in the active region:
-
-#+BEGIN_SRC emacs-lisp
-(setq org-loop-over-headlines-in-active-region t)
-#+END_SRC
-
-  - Comment: 
-    For instance if I want to set the same deadline for all items in my Today headline, I can put the cursor on Today then press: 
-    
-    M-h C-c C-d RET (then RET a bunch of times)
-
-    The M-h part will automatically select all the subtree, and C-c C-d will set the deadline.
-
-Auto logs
-
-#+BEGIN_SRC emacs-lisp
-(setq org-log-done t)
-#+END_SRC
-
-** Source blocks
-
-This is function will be bound to TAB in my personal keymap
-#+begin_src emacs-lisp
-  ;; stole this snippet from somewhere on the internet
-  (defun gwb/indent-org-block ()
-    (interactive)
-    (when (org-in-src-block-p)
-      (org-edit-special)
-      (indent-region (point-min) (point-max))
-      (org-edit-src-exit)))
-#+end_src
 
 * Vertico | Orderless | Consult | Marginalia
 #+begin_src emacs-lisp
@@ -649,8 +630,13 @@ This is function will be bound to TAB in my personal keymap
 #+end_src
 
 #+begin_src emacs-lisp
+  (use-package recentf
+    :commands (recentf-mode
+               recentf-add-file
+               recentf-apply-filename-handlers))
+
   (use-package consult
-    :init
+    :config                               ;; or :init?
     (recentf-mode)
     :bind
     (("C-x b" . consult-buffer)
@@ -803,13 +789,13 @@ autocomplete paths with many files
 
 #+begin_src emacs-lisp
 (use-package helpful
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
+  ;;:custom
+  ;;(counsel-describe-function-function #'helpful-callable)
+  ;;(counsel-describe-variable-function #'helpful-variable)
   :bind
-  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-function] . helpful-callable)
   ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-variable] . helpful-variable)
   ([remap describe-key] . helpful-key))
 #+end_src
 
@@ -982,44 +968,86 @@ Below are my customizations for ESS. A few comments:
 #+end_src
 ** Latex
 
+#+begin_src emacs-lisp
+  (use-package auctex
+    :mode ("\\.tex\\'" . TeX-latex-mode)
+    :config
+    (require 'reftex)
+    (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+    (setq reftex-plug-into-AUCTeX t)
+
+    ;; Auxtex
+    (setq TeX-auto-save t)
+    (setq TeX-parse-self t)
+
+    ;; PDF search
+    (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
+    (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+
+    (setq TeX-PDF-mode t)
+    (when (eq system-type 'darwin)
+      (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
+      (setq TeX-view-program-list
+    '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+      )
+
+
+    ;; (use-packag auctex-latexmk) 
+    (require 'auctex-latexmk)
+    (auctex-latexmk-setup)
+    (setq auctex-latexmk-inherit-TeX-PDF-mode t)
+
+    ;; Only change sectioning colour
+    (setq font-latex-fontify-sectioning 'color)
+    ;; super-/sub-script on baseline
+    (setq font-latex-fontify-script nil) ; might not keep this line.. I like smaller {sub/super}scripts
+    (setq font-latex-script-display (quote (nil)))
+    ;; Do not change super-/sub-script font
+
+
+    (setq font-latex-deactivated-keyword-classes
+          '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
+    )
+#+end_src
+
 
 #+begin_src emacs-lisp
-  ;; Reftex
-  (require 'reftex)
-  (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
-  (setq reftex-plug-into-AUCTeX t)
+  ;; ;; Reftex
+  ;; (require 'reftex)
+  ;; (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+  ;; (setq reftex-plug-into-AUCTeX t)
 
-  ;; Auxtex
-  (setq TeX-auto-save t)
-  (setq TeX-parse-self t)
+  ;; ;; Auxtex
+  ;; (setq TeX-auto-save t)
+  ;; (setq TeX-parse-self t)
 
-  ;; PDF search
-  (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
-  (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+  ;; ;; PDF search
+  ;; (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
+  ;; (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 
-  (setq TeX-PDF-mode t)
-  (when (eq system-type 'darwin)
-    (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
-    (setq TeX-view-program-list
-  '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
-    )
-
-
-  ;; (use-packag auctex-latexmk) 
-  (require 'auctex-latexmk)
-  (auctex-latexmk-setup)
-  (setq auctex-latexmk-inherit-TeX-PDF-mode t)
-
-  ;; Only change sectioning colour
-  (setq font-latex-fontify-sectioning 'color)
-  ;; super-/sub-script on baseline
-  (setq font-latex-fontify-script nil) ; might not keep this line.. I like smaller {sub/super}scripts
-  (setq font-latex-script-display (quote (nil)))
-  ;; Do not change super-/sub-script font
+  ;; (setq TeX-PDF-mode t)
+  ;; (when (eq system-type 'darwin)
+  ;;   (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
+  ;;   (setq TeX-view-program-list
+  ;; '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+  ;;   )
 
 
-  (setq font-latex-deactivated-keyword-classes
-      '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
+  ;; ;; (use-packag auctex-latexmk) 
+  ;; (require 'auctex-latexmk)
+  ;; (auctex-latexmk-setup)
+  ;; (setq auctex-latexmk-inherit-TeX-PDF-mode t)
+
+  ;; ;; Only change sectioning colour
+  ;; (setq font-latex-fontify-sectioning 'color)
+  ;; ;; super-/sub-script on baseline
+  ;; (setq font-latex-fontify-script nil) ; might not keep this line.. I like smaller {sub/super}scripts
+  ;; (setq font-latex-script-display (quote (nil)))
+  ;; ;; Do not change super-/sub-script font
+
+
+  ;; (setq font-latex-deactivated-keyword-classes
+  ;;     '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
 
 #+end_src
 
@@ -1103,30 +1131,6 @@ Hugo utilities
     :commands gwb-run-hugo-server) ;; allows to quickly start and kill hugo servers
 #+end_src
 
-Mark word
-
-#+begin_src emacs-lisp
-(defun gwb/mark-word-at-point ()
-  (interactive)
-  (let ((word (word-at-point t)))
-    (progn
-      (forward-word)
-      (backward-word)
-      (set-mark-command 'nil)
-      (search-forward word))))
-#+end_src
-
-My usual latex note template
-
-#+begin_src emacs-lisp
-(defun gwb/latex-note ()
-  "Inserts my `note' template, and automatically turns on latex (auctex) mode"
-  (interactive)
-  (insert-file-contents-literally "~/.emacs.d/my-latex-templates/note.tex")
-  (latex-mode))
-
-;(global-set-key (kbd "C-c x n") 'my/latex-note)
-#+end_src
 
 
 Better Occur behavior
@@ -1174,83 +1178,65 @@ to beginning of line"
 #+end_src
 
 
-Goes to beginning of match after matching
+Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps to s-SPC.
+
+* Custom keymap with extras
 
 #+begin_src emacs-lisp
-(defun gwb/goto-other-end ()
-  "If search forward, return to beginning of match. If search backward, do 
-nothing (already goes to beginning automatically"
-  (if (< isearch-other-end (point))
-      (goto-char isearch-other-end)))
+  (defun gwb/mark-word-at-point ()
+    (interactive)
+    (let ((word (word-at-point t)))
+      (progn
+        (forward-word)
+        (backward-word)
+        (set-mark-command 'nil)
+        (search-forward word))))
 
-(defun gwb/isearch-exit ()
-  "Modifies the isearch-exit function to return to beginning of 
-word if succesful match"
-  (interactive)
-  (if (and search-nonincremental-instead
-	   (= 0 (length isearch-string)))
-      (let ((isearch-nonincremental t))
-	(isearch-edit-string)) ;; this calls isearch-done as well
-    (isearch-done))
-  (gwb/goto-other-end)
-  (isearch-clean-overlays))
+  (defun gwb/latex-note ()
+    "Inserts my `note' template, and automatically turns on latex (auctex) mode"
+    (interactive)
+    (insert-file-contents-literally "~/.emacs.d/my-latex-templates/note.tex")
+    (latex-mode))
+
+  (defun gwb/flip-windows ()
+    "flips the buffers in split-screen windows"
+    (interactive)
+    (unless (= 2 (count-windows))
+      (error "Only works with two windows."))
+    (let ((this-buffer (window-buffer (selected-window)))
+          (alt-buffer (window-buffer (previous-window))))
+      (set-window-buffer (previous-window) this-buffer)
+      (set-window-buffer (selected-window) alt-buffer)
+      (select-window (previous-window))))
 
 
-(add-hook 'isearch-mode-hook
-	  (lambda ()
-	    (define-key isearch-mode-map "\r"
-	      'gwb/isearch-exit)))
+  (defun gwb/edit-config ()
+    "edits README.org"
+    (interactive)
+    (find-file "~/.emacs.d/README.org"))
 
-#+end_src
 
-Flipping windows
+  (defun gwb/copy-to-osx (start end)
+    (interactive "r")
+    (shell-command-on-region start end "pbcopy"))
 
-#+begin_src emacs-lisp
-(defun gwb/flip-windows ()
-  "flips the buffers in split-screen windows"
-  (interactive)
-  (unless (= 2 (count-windows))
-    (error "Only works with two windows."))
-  (let ((this-buffer (window-buffer (selected-window)))
-	(alt-buffer (window-buffer (previous-window))))
-    (set-window-buffer (previous-window) this-buffer)
-    (set-window-buffer (selected-window) alt-buffer)
-    (select-window (previous-window))))
+  ;; For some reason, the ring bell function gets reactivated
+  ;; every time my laptop goes to sleep on mac os Big Sur... Need
+  ;; a shortcut to quickly set this.
 
-#+end_src
-
-Open README.org
-
-#+begin_src emacs-lisp
-(defun gwb/edit-config ()
-  "edits README.org"
-  (interactive)
-  (find-file "~/.emacs.d/README.org"))
-
-#+end_src
-
-Copy to osx
-
-#+begin_src emacs-lisp
-(defun gwb/copy-to-osx (start end)
-  (interactive "r")
-  (shell-command-on-region start end "pbcopy"))
-#+end_src
-
-For some reason, the ring bell function gets reactivated
-every time my laptop goes to sleep on mac os Big Sur... Need
-a shortcut to quickly set this.
-
-#+begin_src emacs-lisp
   (defun gwb-mute-alerts ()
     (interactive)
     (setq ring-bell-function 'ignore))
 
-#+end_src
+  ;; custom function
+  (defun gwb/indent-org-block ()
+    (interactive)
+    (when (org-in-src-block-p)
+      (org-edit-special)
+      (indent-region (point-min) (point-max))
+      (org-edit-src-exit)))
 
-Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps to s-SPC.
 
-#+begin_src emacs-lisp
   (defvar gwb-custom-keymap nil "my keymap..")
 
   (setq gwb-custom-keymap (make-sparse-keymap))
@@ -1268,31 +1254,3 @@ Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps
   (define-key gwb-custom-keymap (kbd "u") 'undo-tree-visualize)
 #+end_src
 
-
-Another custom keymap for keybindings that should not be overriden by major / minor modes
-
-#+begin_src emacs-lisp
-
-  ;; (defvar gwb-protected-keymap (make-sparse-keymap)
-  ;;   "Keymap for my protected keybindings")
-
-  ;; (define-minor-mode gwb-protected-keybindings-mode
-  ;;   "Minor mode for my protected keybindings."
-  ;;   :init-value t
-  ;;   :global t
-  ;;   :keymap gwb-protected-keymap)
-
-
-  ;; (add-to-list 'emulation-mode-map-alists
-  ;;              `((gwb-protected-keybindings-mode . ,gwb-protected-keymap)))
-
-  ;; (define-key gwb-protected-keymap (kbd "TAB") 'gwb-indent-for-tab-command)
-#+end_src
-
-
-
-* Wrap up
-
-#+begin_src emacs-lisp
-  (setq gc-cons-threshold (* 8 1024 1024)) ; sets gc back to slightly smaller value
-#+end_src

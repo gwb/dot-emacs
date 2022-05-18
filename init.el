@@ -34,7 +34,20 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
-;; loads config
-(org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
+(require 'use-package)
 
+;;  Useful for diagnostics
+
+;; (setq use-package-compute-statistics t)
+;; (use-package benchmark-init
+;;   :ensure t
+;;   :config
+;;   ;; To disable collection of benchmark data after init is done.
+;;   (add-hook 'after-init-hook 'benchmark-init/deactivate))
+
+;; loads config
+(require 'gwb-load-utils)
+(gwb-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
+;; (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
+;; (load-file "~/.emacs.d/README.elc")
 
