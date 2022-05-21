@@ -16,6 +16,7 @@
   ;; (scroll-bar-mode -1)
   ;; (setq inhibit-startup-screen t)
   (set-fill-column 80)
+  (setq column-number-mode t)
   (setq ring-bell-function 'ignore)
   (setq initial-major-mode 'fundamental-mode)
 #+END_SRC
@@ -60,11 +61,6 @@ Most frequently used themes are:
 
   To switch themes during usage: M-X counsel-load-theme
 
-#+begin_src emacs-lisp
-  ;  (set-face-attribute 'default nil :font "Fira Code Retina" :height 120)
-  ;  (set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height 120)
-  ;  (set-face-attribute 'variable-pitch nil :font "Cantarell" :height 130 :weight 'regular)
-#+end_src
     
 #+begin_src emacs-lisp
   (defun gwb/after-frame-set-face (frame)
@@ -86,21 +82,24 @@ Most frequently used themes are:
 
 
 #+BEGIN_SRC emacs-lisp
-    ;(use-package monokai-theme :ensure t)
-    ;(load-theme 'monokai t)
+  ;(use-package monokai-theme :ensure t)
+  ;(load-theme 'monokai t)
 
-    (use-package doom-themes
-      ;:init (load-theme 'doom-monokai-classic t)
-      :init (load-theme 'doom-snazzy t)
-      :config
-      (doom-themes-org-config))
+  (use-package doom-themes
+    ;:init (load-theme 'doom-monokai-classic t)
+    ;;:init (load-theme 'doom-snazzy t)
+    :init (load-theme 'doom-tomorrow-day t)
+    :config
+    (doom-themes-org-config))
+
+  ;(load-theme 'sanityinc-tomorrow-day)
 #+END_SRC
 
 You must run (all-the-icons-install-fonts) one time after
 installing this package!
 
 #+begin_src emacs-lisp
-(use-package all-the-icons)
+;;(use-package all-the-icons)
 #+end_src
 
 Icons for the doom-modeline has to be set after frame is created, otherwise they won't be
@@ -117,6 +116,7 @@ shown when emacs is started in daemon-mode (same problem as set-face-attribute)
           (setq doom-modeline-major-mode-color-icon t))))
 
   (use-package doom-modeline
+    :disabled t
     :ensure t
     :init (doom-modeline-mode 1)
     :config
@@ -124,8 +124,9 @@ shown when emacs is started in daemon-mode (same problem as set-face-attribute)
     (set-face-attribute 'mode-line nil :background "#323232")
     (set-face-attribute 'mode-line-inactive nil :background "#282828")
     (set-face-attribute 'mode-line-inactive nil :foreground "#464646")
-    (add-hook 'after-make-frame-functions 'gwb/after-frame-modeline)
-    (mapc 'gwb/after-frame-modeline (frame-list)))
+    ;; (add-hook 'after-make-frame-functions 'gwb/after-frame-modeline)
+    ;(mapc 'gwb/after-frame-modeline (frame-list))
+    )
 
 
 #+end_src
@@ -191,7 +192,7 @@ and loads it.
 
 #+begin_src emacs-lisp
   (use-package outline
-  :init
+  ;;:init
   ;;(defvar gwb-outline-minor-mode-map (make-sparse-keymap))
   :bind
   (:map outline-minor-mode-map
