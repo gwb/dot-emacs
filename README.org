@@ -1053,18 +1053,122 @@ Below are my customizations for ESS. A few comments:
 
 ** Python
 
-My python uses the `python-mode` as a major mode, but relies heavily on the minor mode `elpy-mode`.
+*** Description of the setup
 
-For `python-mode`, the config is pretty straightforward. I configure TAB to use my custom completion command (based on `company`), and configure the shels to use.
+The python setup in emacs is a wee bit complicated. There are generally roughly 4 parts:
+
+1. The major mode that provides things like syntax highlighting, bindings to the interpreter,
+  etc...
+2. An "orchestrating minor mode" that communicates with outside binaries or other minor modes to provide things "ide-like" features like completion, linting, formatting, etc...
+3. The suite of binaries, other minor modes providing the individual functionalities listed above
+4. The minor modes that deal with the display of information (corfu/company, flymake/flycheck, etc...)
+
+There are a few options for each of these: picking the right components and having them working nicely in concert requires some fiddling.
+
+*Major mode*:
+
+I'm using emacs's built-in `python-mode`. I'm not sure there are any popular
+alternatives at the moment. The syntax highlighting it provides is not great. A specific alternative for syntax-highlighting uses `tree-sitter`. I should investigate that at some point.
+
+TODO: investigate `tree-sitter`
+
+*Orchestrating minor mode*:
+
+This is the biggest decision-point. I used rely on `elpy` for it, but it was fiddly and unreliable for me. I stopped using it in frustration and went back to using only python-mode but I missed having things like code signature in the minibuffer, decent auto-completion, etc.. 
+
+I have now switched to `lsp-mode` which is a client interface for the Language Server Protocol. It provides a generic client infrastructure that simplifies the task of writing concrete clients for specific languages. The important thing to understand about the lsp setup is that it involves 3 components:
+
+1. lsp-mode: the emacs package that provides the generic interface
+      
+2. the language server. This is not an emacs-specific thing: these are external programs that provides language services for specific languages, and that the client connects to. For popular languages, there may be a few different server options to choose from. For python, there are 3 options:
+   
+   - pyls
+   - pylsp
+   - pyright
+     
+   The `pyls` server was developped by Palantir and seems to have been abandonned -- or at least, it seems to no longer be supported. The `pylsp` server is a fork of `pylsp` that is still maintained. The `pyright` server is supported by microsoft.
+
+3. The concrete client implementation. As I said, `lsp-mode` provides the generic client interface (i.e. you can use lsp-mode for many different languages) but you still need a specific client implementation. Generally you need an specific implementation for each language server. There can be different implementations for a given server, but that doesn't seem to be the case at the moment. The clients are:
+   
+   - lsp-pyls     => included in lsp-mode
+   - lsp-pylsp    => included in lsp-mode
+   - lsp-pyright  => provided by the `lsp-pyright` package
+
+
+I am currently using `pylsp` server (installed via `pip3 install python-lsp-server`) and the `lsp-pylsp` client included in the `lsp-mode` emacs package that also provides `lsp-mode`.
+
+
+*Additional tools*
+
+The lsp server (so in my case `pylsp`) relies on external tools to deliver some of its optional functionalities. To complicate things further, there may be several tools to choose from for given functionalitites: it really is an embarassement of riches! Below are some of the optional functionalities (non-exhaustive) that `pylsp` can provide and some of the tools that can be used to provide them:
+
+- type-checking: pylsp-mypy. Note: the `pyright` server seems to do type-checking out of the box, but pylsp requires the `pylsp-mypy`, which can be installed with a simple `pip install pylsp-mypy` (make sure its in the same environment).
+
+- Error + Pep8 style checking: flake8 or pylint (there are in fact many other options, but these are the main ones)
+
+  I've decided to go with *flake8* for now because the `lsp-pylsp` client shipped with `lsp-mode` has better support for it than for pylint -- by which I mean that it makes it easier to specify configs for flake8 that will then be sent to the server.
+  
+- Reformatting: autopep8 vs yapf (again, many more options)
+
+  I'm currently *not* using an automatic formatter. If decide to do so, `yapf` seems to be the preferred option.
+
+- Completion and refactoring: jedi or rope.
+
+  I've been using the default, which is `jedi`, although I've been using it for completion mostly, not refactoring. From the `rope` website, it seems that `rope` is focused on recactoring. At this point, I mostly care about completion so I'll stick to `jedi`.
+
+
+
+*Complementary emacs modes*
+
+Finally, `lsp-mode` relies on other emacs packages for certain functionalities. E.g.
+
+- Completion: can use company or the built-in completion-at-point facilities (in which case, we can use things like corfu, etc...)
+- Flycheck or Flymake. `Flymake` is built into emacs but `Flycheck` is the recommended option for `lsp-mode`.
+  I've tried both and I like `Flycheck`:
+  + It has nice introspection facilities so you can see what's happening with the mode. E.g. `M-X flycheck-verify-setup` is very informative. Note that when used in concert with `lsp-mode`, flycheck basically uses `lsp` as it's "checking" backend.
+  + You can list all errors easily `M-x list-flycheck-errors` (flymake can probably do that as well)
+  + You can jump to the next error `C-c ! n`
+      
+
+*** Config
+
+As described above, some additional packages, modules must exist for my config to work optimally. Thankfully, nothing *breaks* if I don't have things installed: the optional features just won't be turned on. So in addition to 'lsp-mode', I rely on the following:
+
+- [emacs package] flycheck 
+- [pip install] flake8
+- [pip install] pylsp-mypy
+- [pip install] jedi 
+
+#+begin_src emacs-lisp
+  (use-package lsp-mode
+    :defer t                   ; ok to defer, will be loaded when needed
+    :config
+    ;; the pyright server has higher precedence than pylsp so need to disable it so
+    ;; lsp uses pylsp
+    (setq lsp-disabled-clients (cons 'pyright lsp-disabled-clients)))
+#+end_src
+
+Additional notes on lsp-mode:
+
+The `lsp-mode` package provides helpful messages / debugging facilities to see what's happening with the server / client communication. e.g.
+- The *lsp-log* buffer
+- The *lsp-stderr* buffer
+- M-x lsp-describe-session
+
+A note about completion: it works by adding its own backend in the list of `completion-at-point-functions`. The backend is called `lsp-completion-at-point`. You should see it if you type `C-h v completion-at-point-functions`.
 
 #+begin_src emacs-lisp
   (use-package python
     :ensure nil
     :mode ("\\.py\\'" . python-mode)
     :interpreter ("python" "python3")
-    ;:bind
-    ;(:map python-mode-map
-    ;      ("TAB" . gwb-indent-for-tab-command))
+    :hook
+    (python-mode . (lambda ()
+                     ;(require 'lsp-pyright)
+                     (lsp)))
+                                          ;:bind
+                                          ;(:map python-mode-map
+                                          ;      ("TAB" . gwb-indent-for-tab-command))
     :config
     ;; => uncomment two below
     (setq python-shell-interpreter "ipython3")
