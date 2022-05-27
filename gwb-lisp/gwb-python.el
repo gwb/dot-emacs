@@ -4,6 +4,42 @@
 ;;  then parse the string to map error.
 
 
+(defvar gwb-py-handlers-list nil)
+
+(defun gwb-py-reset-handlers ()
+  (setq gwb-py-handlers-list nil))
+
+(defun gwb-py-list-handlers ()
+  gwb-py-handlers-list)
+
+(defun gwb-py-get-handler (key)
+  (cdr (assoc key gwb-py-handlers-list)))
+
+(defun gwb-py-add-handler (key fn &optional replace?)
+  (if (not (stringp key))
+      (error "Key must be a string")
+    (let ((current-handlers (gwb-py-get-handler key)))
+      (setf (alist-get key gwb-py-handlers-list nil nil #'equal)
+            (if replace? (list fn) (cons fn current-handlers))))))
+
+(defmacro gwb-py-add-handlers (&rest bindings)
+  (dolist (binding bindings)
+    (pcase binding
+      (`(,key . ,fn-lst) (--each fn-lst (gwb-py-add-handler key it)))
+      (`(,key ,fn) (gwb-py-add-handler key fn)))))
+
+
+(defun gwb-py-remove-handler (key)
+  (while (gwb-py-get-handler key)
+    (setf (alist-get key gwb-py-handlers-list nil 'remove #'equal) nil)))
+
+(defun gwb-py-run-handlers (key)
+  (let ((handlers (gwb-py-get-handler key)))
+    (when handlers
+      (dolist (fn handlers)
+        (funcall fn)))))
+
+
 ;; handlers
 
 (defun gwb-py-fix-at-point-missing-whitespace-around-op ()
@@ -29,6 +65,8 @@
   ;; E201
   (delete-char 1))
 
+
+
 ;; main logic
 
 (defun gwb-py-list-errors-in-line ()
@@ -45,14 +83,22 @@
 (defun gwb-py--fix-errors-in-line (lst)
   (when lst
     (let ((pos (caar lst))
-          (id (cdar lst))) 
+          (id (cdar lst)))
       (goto-char pos)
-      (cond
-       ((s-equals? id "E225") (gwb-py-fix-at-point-missing-whitespace-around-op))
-       ((s-equals? id "E231") (gwb-py-fix-at-point-missing-whitespace-after-paren))
-       ((s-equals? id "E201") (gwb-py-fix-at-point-whitespace-after-paren))
-       ((s-equals? id "W291") (gwb-py-fix-at-point-trailing-whitespace)))
+      (gwb-py-run-handlers id)
       (gwb-py--fix-errors-in-line (cdr lst)))))
+
+;; (defun gwb-py--fix-errors-in-line (lst)
+;;   (when lst
+;;     (let ((pos (caar lst))
+;;           (id (cdar lst))) 
+;;       (goto-char pos)
+;;       (cond
+;;        ((s-equals? id "E225") (gwb-py-fix-at-point-missing-whitespace-around-op))
+;;        ((s-equals? id "E231") (gwb-py-fix-at-point-missing-whitespace-after-paren))
+;;        ((s-equals? id "E201") (gwb-py-fix-at-point-whitespace-after-paren))
+;;        ((s-equals? id "W291") (gwb-py-fix-at-point-trailing-whitespace)))
+;;       (gwb-py--fix-errors-in-line (cdr lst)))))
 
 (defun gwb-py-fix-errors-in-line ()
   (interactive)
@@ -60,6 +106,13 @@
     (end-of-line)
     (gwb-py--fix-errors-in-line error-list)))
 
+
+;;; Adding the handlers
+(gwb-py-add-handlers
+  ("E225" #'gwb-py-fix-at-point-missing-whitespace-around-op)
+  ("E231" #'gwb-py-fix-at-point-missing-whitespace-after-paren)
+  ("E201" #'gwb-py-fix-at-point-whitespace-after-paren)
+  ("W291" #'gwb-py-fix-at-point-trailing-whitespace))
 
 
 ;; (defun replace-in-line (what by)
