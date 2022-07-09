@@ -211,7 +211,12 @@ and loads it.
 #+begin_src emacs-lisp
   (use-package ace-window
     :ensure t
-    :bind ("M-o" . 'ace-window))
+    :bind ("M-o" . 'ace-window)
+    :config
+    ;; increase size of leading char
+    (custom-set-faces
+     '(aw-leading-char-face
+       ((t (:foreground "red" :height 3.0))))))
 #+end_src
 
 * Search improvements
@@ -803,10 +808,13 @@ autocomplete paths with many files
 * Yasnippet
 #+begin_src emacs-lisp
   (use-package yasnippet
-    :ensure t
-    :disabled t
-    :init
-      (yas-global-mode 1))
+    :hook (python-mode . yas-minor-mode))
+
+  ;; (use-package yasnippet
+  ;;   :ensure t
+  ;;   :disabled t
+  ;;   :init
+  ;;     (yas-global-mode 1))
 #+end_src
 
 * Programming languages
@@ -1165,7 +1173,7 @@ A note about completion: it works by adding its own backend in the list of `comp
     :interpreter ("python" "python3")
     :hook
     (python-mode . (lambda ()
-                     ;(require 'lsp-pyright)
+                                          ;(require 'lsp-pyright)
                      (lsp)))
                                           ;:bind
                                           ;(:map python-mode-map
