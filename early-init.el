@@ -5,4 +5,5 @@
 (scroll-bar-mode -1)
 (setq inhibit-startup-screen t)
 
+(setq package-enable-at-startup nil)
 ;;; early-init.el ends here

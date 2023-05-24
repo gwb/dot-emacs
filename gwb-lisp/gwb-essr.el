@@ -11,8 +11,9 @@
 
 ;;; ============ General variables
 
-(defvar gwb-essr-outline-regexp "###")
 
+;; (defvar gwb-essr-outline-regexp "###")
+(defvar gwb-essr-outline-regexp "[#\f][#\f] [*\f]+")
 
 ;;; ============ Configure inferior-ess-r-mode
 
@@ -208,13 +209,13 @@ char occurs in between, don't move, and return nil."
 ;;; ============ insert shortcuts
 
 (defun gwb-essr--insert-pipe ()
-  (insert " %>%"))
+  (insert " %>% "))
 
 (defun gwb-essr--insert-in ()
-  (insert "%in%"))
+  (insert "%in% "))
 
 (defun gwb-essr--insert-% ()
-  (insert "%"))
+  (insert "% "))
 
 
 (defun gwb-essr--match-back (str)

@@ -9,8 +9,8 @@
                                (setq gc-cons-threshold (* 80 1024 1024)
                                      gc-cons-percentage 0.3)))
 
-;; faster load time.. otherwise load packages twice
-(setq package-enable-at-startup nil)
+;; faster load time.. otherwise load packages twice  <- done in early init now, as per doc.
+;; (setq package-enable-at-startup nil)
 
 ;; archives from which packages can be downloaded
 (add-to-list 'package-archives
@@ -47,7 +47,8 @@
 
 ;; loads config
 (require 'gwb-load-utils)
-(gwb-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
+;; (gwb-babel-load-file (expand-file-name "README.org"))
+(gwb-babel-load-file (expand-file-name "~/.emacs.default/README.org"))
 ;; (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
 ;; (load-file "~/.emacs.d/README.elc")
 

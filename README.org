@@ -1,4 +1,9 @@
 
+* TODO
+There are a number of small irritants that need to be fixed:
+
+[ ] Fix orderless so it does case-insensitive and regexp matches.
+
 * Emacs 28 fixes
 
 #+begin_src emacs-lisp
@@ -189,21 +194,21 @@ and loads it.
 #+END_SRC
 
 * Outlines
-
+This is messes up with R -- I redefined the outline section below.
 #+begin_src emacs-lisp
-  (use-package outline
-  ;;:init
-  ;;(defvar gwb-outline-minor-mode-map (make-sparse-keymap))
-  :bind
-  (:map outline-minor-mode-map
-        ("M-n" . 'outline-next-visible-heading)
-        ("M-p" . 'outline-previous-visible-heading)
-        ("C-c C-q" . 'hide-body)
-        ("C-c C-o" . 'hide-other)
-        ("C-c C-c" . 'hide-entry)
-        ("C-c C-a" . 'show-all)
-        ("C-c C-e" . 'outline-show-entry)
-        ("C-c C-k" . 'show-branches)))
+  ;; (use-package outline
+  ;; ;;:init
+  ;; ;;(defvar gwb-outline-minor-mode-map (make-sparse-keymap))
+  ;; :bind
+  ;; (:map outline-minor-mode-map
+  ;;       ("M-n" . 'outline-next-visible-heading)
+  ;;       ("M-p" . 'outline-previous-visible-heading)
+  ;;       ("C-c C-q" . 'hide-body)
+  ;;       ("C-c C-o" . 'hide-other)
+  ;;       ("C-c C-c" . 'hide-entry)
+  ;;       ("C-c C-a" . 'show-all)
+  ;;       ("C-c C-e" . 'outline-show-entry)
+  ;;       ("C-c C-k" . 'show-branches)))
 #+end_src
 
 * Window utilities
@@ -333,6 +338,22 @@ Notes:
     (setq isearch-lax-whitespace t))
 #+end_src
 
+** deadgrep
+#+begin_src emacs-lisp
+  (use-package deadgrep
+    :demand t
+    :init
+    (defun gwb-deadgrep (search-term)
+      (interactive (list (deadgrep--read-search-term)))
+      (let ((dir (when current-prefix-arg
+                   (message (read-directory-name "where? "))))
+            (current-prefix-arg nil)) 
+        (deadgrep search-term dir)))
+
+    :bind
+    (("M-s g" . gwb-deadgrep)))
+#+end_src
+
 * File navigation
 
 #+begin_src emacs-lisp
@@ -350,17 +371,20 @@ This needs to be loaded early
 
 #+begin_src emacs-lisp
   (add-hook 'org-mode-hook
-	    (lambda () 
-	      (defhydra hydra-org (org-mode-map "C-.")
-		"Org outline movements"
-		("s" outline-up-heading "step out")
-		("k" outline-next-visible-heading "next")    
-		("j" outline-previous-visible-heading "back")  
-		("f" org-forward-heading-same-level "next (same level)")
-		("d" org-backward-heading-same-level "back (same level)")  
-		("SPC" org-cycle "fold/unfold")
-		("l" org-metaleft "promote")
-		(";" org-metaright "demote"))))
+            (lambda () 
+              (defhydra hydra-org (org-mode-map "C-.")
+                "Org outline movements"
+                ("s" outline-up-heading "step out")
+                ("k" outline-next-visible-heading "next")    
+                ("j" outline-previous-visible-heading "back")  
+                ("f" org-forward-heading-same-level "next (same level)")
+                ("d" org-backward-heading-same-level "back (same level)")  
+                ("SPC" org-cycle "fold/unfold")
+                ("l" org-metaleft "promote")
+                (";" org-metaright "demote"))))
+
+
+  
 #+end_src
 
 
@@ -576,7 +600,24 @@ TODO: make hydras for manipulating windows
 
 #+END_SRC
 
+* Dired
 
+#+begin_src emacs-lisp
+
+  (defun gwb-dired-kill-hidden nil
+    (interactive)
+    (dired-mark-files-regexp "^\\.")
+    (dired-do-kill-lines))
+
+
+    (use-package dired
+      :bind
+      (:map dired-mode-map
+            ("." . gwb-dired-kill-hidden))
+      :config
+      (setq insert-directory-program "gls")
+      (setq dired-listing-switches "-alh --group-directories-first"))
+#+end_src
 * Vertico | Orderless | Consult | Marginalia
 #+begin_src emacs-lisp
   (use-package vertico
@@ -609,13 +650,17 @@ TODO: make hydras for manipulating windows
 
 #+begin_src emacs-lisp
   (use-package orderless
-    :init
-    (setq completion-styles '(orderless)
+    :demand t
+    :custom
+    (setq completion-styles '(orderless basic)
           completion-category-defaults nil
           completion-category-overrides '((file (styles partial-completion))
-                                          (symbol (styles orderless-strict-leading-initialism
-                                                          orderless-literal
-                                                          orderless-regexp)))))
+                                          (symbol (styles
+                                                   ;; orderless-strict-leading-initialism
+                                                   orderless-literal
+                                                   orderless-regexp))))
+    :config
+    (setq completion-styles '(orderless)))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -661,7 +706,7 @@ TODO: make hydras for manipulating windows
 #+begin_src emacs-lisp
   (use-package corfu
     :init
-    (corfu-global-mode)
+    (global-corfu-mode)
     :custom
     (corfu-cycle t)
     :bind
@@ -790,7 +835,11 @@ autocomplete paths with many files
     :after company)
 #+end_src
 
-
+* Avy
+#+begin_src emacs-lisp
+  (use-package avy
+    :bind (("M-j" . avy-goto-char-timer)))
+#+end_src
 * Helpful
 
 #+begin_src emacs-lisp
@@ -816,6 +865,27 @@ autocomplete paths with many files
   ;;   :init
   ;;     (yas-global-mode 1))
 #+end_src
+
+* Outlining
+#+begin_src emacs-lisp
+  (use-package outline
+    :commands outline-minor-mode
+    :init
+    (add-hook 'emacs-lisp-mode-hook
+              #'(lambda () (setq-local outline-regexp "[;\f][;\f] [*\f]+"))))
+
+  (add-hook 'prog-mode-hook 'outline-minor-mode)
+  (add-hook 'prog-mode-hook 'hs-minor-mode)
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package bicycle
+    :after outline
+    :bind (:map outline-minor-mode-map
+                ("M-S-]" . bicycle-cycle)
+                ("C-M-]" . bicycle-cycle-global)))
+#+end_src
+
 
 * Programming languages
 
@@ -858,7 +928,8 @@ I have played around, at some point or another, with many programming languages.
 #+begin_src emacs-lisp
   (use-package lispy
     :ensure t
-    :hook (emacs-lisp-mode . lispy-mode)
+    :hook ((emacs-lisp-mode . lispy-mode)
+           (scheme-mode . lispy-mode))
     :bind (:map lispy-mode-map
                 ("M-o" . nil)))
 
@@ -908,25 +979,26 @@ ESS is (used to be?) fiddly to setup correctly.
 
 
 #+begin_src emacs-lisp
-      (use-package ess
-        :defer t)
+        (use-package ess
+          :defer t)
 
-      (use-package ess-r-mode
-        :hook
-        ((ess-r-mode . hs-minor-mode))
-        :bind
-        (:map
-         ess-r-mode-map
-         ;("TAB" . gwb-indent-for-tab-command)
-         ("_" . ess-insert-assign)
-         ("M-[" . hs-hide-all)
-         ("M-]" . hs-show-all)
-         :map
-         inferior-ess-r-mode-map
-         ;("TAB" . gwb-indent-for-tab-command)
-         ("_" . ess-insert-assign)
-         ("M-[" . hs-hide-all)
-         ("M-]" . hs-show-all)))
+        (use-package ess-r-mode
+          :hook
+          ((ess-r-mode . hs-minor-mode)
+           (ess-r-mode . outline-minor-mode))
+          :bind
+          (:map
+           ess-r-mode-map
+           ;("TAB" . gwb-indent-for-tab-command)
+           ("_" . ess-insert-assign)
+           ("M-[" . hs-hide-all)
+           ("M-]" . hs-show-all)
+           :map
+           inferior-ess-r-mode-map
+           ;("TAB" . gwb-indent-for-tab-command)
+           ("_" . ess-insert-assign)
+           ("M-[" . hs-hide-all)
+           ("M-]" . hs-show-all)))
 
 
 #+end_src
@@ -958,12 +1030,42 @@ Below are my customizations for ESS. A few comments:
 #+end_src
 
 ** C / C++
+
+#+begin_src emacs-lisp
+  (defhydra dumb-jump-hydra (:hint nil :color blue)
+      "
+  Dumb jump
+  "
+      ("j" dumb-jump-go "Go")
+      ("o" dumb-jump-go-other-window "Other window")
+      ("e" dumb-jump-go-prefer-external "Go external")
+      ("x" dumb-jump-go-prefer-external-other-window "Go external other window")
+      ("i" dumb-jump-go-prompt "Prompt")
+      ("l" dumb-jump-quick-look "Quick look")
+      ("b" dumb-jump-back "Back"))
+#+end_src
+
 #+begin_src emacs-lisp
   (use-package cc-mode
+    :init
+    (defun gwb/clang-capf-init ()
+      (add-hook 'completion-at-point-functions #'clang-capf nil t))
+    (defun gwb/dumb-jump-init ()
+      (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
+      (setq xref-show-definitions-function #'xref-show-definitions-completing-read))
     :defer t
     :config
     (setq c-default-style "linux")
-    (setq c-basic-offset 4))
+    (setq c-basic-offset 4)
+    (add-hook 'c-mode-hook #'gwb/clang-capf-init)
+    (add-hook 'c-mode-hook #'gwb/dumb-jump-init)
+
+    :bind (:map c-mode-map
+                ("TAB" . indent-for-tab-command)
+                ("C-j" . dumb-jump-hydra/body)
+                ("M-[" . hs-show-all)
+                ("M-]" . hs-hide-all)
+                ("C-]" . hs-toggle-hiding)))
 #+end_src
 
 #+begin_src emacs-lisp
@@ -1095,7 +1197,7 @@ I have now switched to `lsp-mode` which is a client interface for the Language S
    - pylsp
    - pyright
      
-   The `pyls` server was developped by Palantir and seems to have been abandonned -- or at least, it seems to no longer be supported. The `pylsp` server is a fork of `pylsp` that is still maintained. The `pyright` server is supported by microsoft.
+   The `pyls` server was developped by Palantir and seems to have been abandonned -- or at least, it seems to no longer be supported. The `pylsp` server is a fork of `pyls` that is still maintained. The `pyright` server is supported by microsoft.
 
 3. The concrete client implementation. As I said, `lsp-mode` provides the generic client interface (i.e. you can use lsp-mode for many different languages) but you still need a specific client implementation. Generally you need an specific implementation for each language server. There can be different implementations for a given server, but that doesn't seem to be the case at the moment. The clients are:
    
@@ -1125,7 +1227,15 @@ The lsp server (so in my case `pylsp`) relies on external tools to deliver some 
 
   I've been using the default, which is `jedi`, although I've been using it for completion mostly, not refactoring. From the `rope` website, it seems that `rope` is focused on recactoring. At this point, I mostly care about completion so I'll stick to `jedi`.
 
-
+- Poetry: I'm experimenting with poetry as a dependency manager.
+  + M-x poetry will start the menu with options, etc..
+  + To use the packages installed with poetry in the repl, you need to activate the
+    virtualenv (M-x poetry activate) then just M-x run-python. Note that you need to
+    install ipython in the virtualenv for it to work (M-x poetry add ipython). Preferably,
+    install it as a dev dependency.   
+  + To use the lsp server (which gives you completion, etc..) with poetry, you need to
+    install the python-sp-server as a dev dependency in poetry, then activate the virtualenv,
+    then visit a python file, etc...
 
 *Complementary emacs modes*
 
@@ -1154,6 +1264,7 @@ As described above, some additional packages, modules must exist for my config t
     :config
     ;; the pyright server has higher precedence than pylsp so need to disable it so
     ;; lsp uses pylsp
+    ;; (setq lsp-clangd-binary-path "/usr/local/opt/llvm/bin/clangd")
     (setq lsp-disabled-clients (cons 'pyright lsp-disabled-clients)))
 #+end_src
 
@@ -1308,7 +1419,7 @@ Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps
   (defun gwb/latex-note ()
     "Inserts my `note' template, and automatically turns on latex (auctex) mode"
     (interactive)
-    (insert-file-contents-literally "~/.emacs.d/my-latex-templates/note.tex")
+    (insert-file-contents-literally "~/.emacs.default/my-latex-templates/note.tex")
     (latex-mode))
 
   (defun gwb/flip-windows ()
@@ -1326,7 +1437,7 @@ Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps
   (defun gwb/edit-config ()
     "edits README.org"
     (interactive)
-    (find-file "~/.emacs.d/README.org"))
+    (find-file "~/.emacs.default/README.org"))
 
 
   (defun gwb/copy-to-osx (start end)
