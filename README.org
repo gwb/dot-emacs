@@ -2,7 +2,7 @@
 * TODO
 There are a number of small irritants that need to be fixed:
 
-[ ] Fix orderless so it does case-insensitive and regexp matches.
+[x] Fix orderless so it does case-insensitive and regexp matches.
 
 * Emacs 28 fixes
 
