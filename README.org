@@ -955,6 +955,43 @@ I have played around, at some point or another, with many programming languages.
                 ("M-]" . hs-show-all)))
 #+end_src
 
+** BQN
+#+begin_src emacs-lisp
+  (use-package bqn-mode
+    :init (require 'gwb-bqn)
+    :commands (bqn-comint-buffer)
+    :config (add-hook 'bqn-comint-mode-hook #'gwb-amend-bqn-comint-mode)
+    :bind (:map bqn-mode-map
+                ("C-c C-c" . bqn-comint-send-dwim)))
+#+end_src
+
+#+begin_src emacs-lisp
+  ;; (use-package gwb-bqn
+  ;;   :requir
+  ;;   :after bqn-comint-mode
+  ;;   :hook
+  ;;   (bqn-comint-mode-hook . gwb-amend-bqn-comint-mode)
+  ;;   :config
+  ;;   (gwb-amend-bqn-comint-mode))
+#+end_src
+
+** 
+#+begin_src emacs-lisp
+  (use-package ngnk-cli
+    :mode "\\.k\\'"
+    :config (setq ngnk-cli-file-path "/Users/gwb/Hacks/repos/k/k")
+    :bind (:map ngnk-cli-map ("C-c C-r" . ngnk-send-region)
+                             ("C-c C-c" . ngnk-send-line-at-point))
+
+    )
+#+end_src
+
+** J
+#+begin_src emacs-lisp
+  (use-package j-mode
+   :custom
+   (j-console-cmd "jconsole"))
+#+end_src
 ** R
 
 ESS is (used to be?) fiddly to setup correctly.
@@ -1278,6 +1315,10 @@ The `lsp-mode` package provides helpful messages / debugging facilities to see w
 A note about completion: it works by adding its own backend in the list of `completion-at-point-functions`. The backend is called `lsp-completion-at-point`. You should see it if you type `C-h v completion-at-point-functions`.
 
 #+begin_src emacs-lisp
+  (defun gwb-py-get-menu nil
+    (interactive)
+    (occur "# \\*"))
+
   (use-package python
     :ensure nil
     :mode ("\\.py\\'" . python-mode)
@@ -1293,11 +1334,68 @@ A note about completion: it works by adding its own backend in the list of `comp
     ;; => uncomment two below
     (setq python-shell-interpreter "ipython3")
     (setq python-shell-interpreter-args "-i --simple-prompt")
+    :bind
+    (:map python-mode-map
+          ("C-c =" . gwb-py-get-menu))
     )
 
 #+end_src
 
 
+**Pesky warning in repl**
+
+When upgrading ipython to use python 3.11, I started seeing the following error:
+
+#+begin_quote
+Warning (python): Your ‘python-shell-interpreter’ doesn’t seem to support readline, yet ‘python-shell-completion-native-enable’ was t and "ipython3" is not part of the ‘python-shell-completion-native-disabled-interpreters’ list.  Native completions have been disabled locally. Consider installing the python package "readline". 
+#+end_quote
+
+I've had similar issues in the past. I took the time to track this down, and apparently
+it comes down to the `readline` module that is built into python. Different pythons use readline modules linking to different c readline libraries: `libedit` or `gnureadline`.
+You can check which version your ipython uses (assuming that you want to use ipython as
+your repl)
+
+#+begin_quote
+import readline
+print(readline.__doc__)
+#+end_quote
+
+If you see:
+
+~Importing this module enables command line editing using libedit readline.~
+
+Then you'll see warning: you need to make sure your interpreter uses the gnureadline
+version. I don't know how to force pick a version of ipython3 that has gnureadline. Instead,
+I'm using the following trick:
+
+1. pip install gnureadline
+2. automatically run some code on ipython startup so it tricks python into importing
+   gnureadline when it wants to import readline. The python code you want to run is
+
+   #+begin_quote
+   import gnureadline
+   import sys
+   sys.modules["readline"] = gnureadline
+   #+end_quote
+
+   To make sure ipython runs it on startup you need to to run
+
+   #+begin_quote
+   ipython3 profile create
+   #+end_quote
+
+   from the command line. This will create a ~.ipython/profile_default/ipython_config.py
+   file with a bunch of stuff commented out in it. You just need to make sure that you
+   have the following in the file:
+
+   #+begin_quote
+   c = get_config()  #noqa
+   c.InteractiveShellApp.exec_lines = ['import gnureadline', 'import sys', 'sys.modules["readline"] = gnureadline']   
+   #+end_quote
+
+   You also need to make sure that you've passe the "-i --simple-prompt" arguments to
+   python-shell-interpreter-args (as in the above config).
+   
 For `elpy-mode`, the config requires a bit more explaining. The Elpy package provides the `elpy-enable' command which provides a wrapper around the `elpy-mode' command which actually activates the minor mode. The minor mode command `elpy-mode` does a few things in its body, including setting up some special configs for `company`. One thing it does, which I don't like, is to setup autocompletion by setting `(setq company-idle-delay 0.1)`. So I'm basically writing as small hook around `elpy-mode` to deactivate auto-complete every time elpy-mode is called.
 
 #+begin_src emacs-lisp
@@ -1318,6 +1416,8 @@ For `elpy-mode`, the config requires a bit more explaining. The Elpy package pro
    ;;(elpy-enable))
    ;;(setq python-shell-interpreter-args "-c exec('__import__(\\'readline\\')') -i"))
 #+end_src
+
+
 
 * terminals
 Useful keybindings for terminal:
@@ -1407,6 +1507,10 @@ Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps
 * Custom keymap with extras
 
 #+begin_src emacs-lisp
+  (defun gwb/display-this-buffer-other-window ()
+    (interactive)
+    (switch-to-buffer-other-window (buffer-name)))
+
   (defun gwb/mark-word-at-point ()
     (interactive)
     (let ((word (word-at-point t)))
@@ -1476,5 +1580,6 @@ Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps
   (define-key gwb-custom-keymap (kbd "TAB") 'gwb/indent-org-block)
   (define-key gwb-custom-keymap (kbd "s") 'hydra-spotify/body)
   (define-key gwb-custom-keymap (kbd "u") 'undo-tree-visualize)
+  (define-key gwb-custom-keymap (kbd "d") 'gwb/display-this-buffer-other-window)
 #+end_src
 
