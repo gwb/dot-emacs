@@ -1,18 +1,35 @@
+
+* TODO
+There are a number of small irritants that need to be fixed:
+
+[x] Fix orderless so it does case-insensitive and regexp matches.
+
+* Emacs 28 fixes
+
+#+begin_src emacs-lisp
+  (use-package gwb-fix-obsolescence
+    :demand t)
+#+end_src
+
 * Interface tweaks
 ** Remove frills from interface + some customizations
    
 #+BEGIN_SRC emacs-lisp
-  (tool-bar-mode -1)
-  (menu-bar-mode -1)
+  ;; (tool-bar-mode -1)
+  ;; (menu-bar-mode -1)
   (fset 'yes-or-no-p 'y-or-n-p)
-  (scroll-bar-mode -1)
-  (setq inhibit-startup-screen t)
+  ;; (scroll-bar-mode -1)
+  ;; (setq inhibit-startup-screen t)
   (set-fill-column 80)
+  (setq column-number-mode t)
+  (setq ring-bell-function 'ignore)
+  (setq initial-major-mode 'fundamental-mode)
 #+END_SRC
 
 ** Some better defaults
 
 #+BEGIN_SRC emacs-lisp
+  (setq-default indent-tabs-mode nil)
   (set-fill-column 80)
   (setq uniquify-buffer-name-style 'forward)
   (show-paren-mode)
@@ -20,7 +37,26 @@
   (global-set-key (kbd "M-<down>") 'scroll-other-window)
   (global-set-key (kbd "M-<up>") 'scroll-other-window-down)
   (setq eshell-cmpl-ignore-case t) ;; ignore case when completing filename
+
 #+END_SRC
+
+** Defer loading some libraries
+#+begin_src emacs-lisp
+  (use-package dash :defer t)
+  (use-package elisp-refs :defer t)
+  (use-package f :defer t)
+  (use-package ht :defer t)
+  (use-package s :defer t)
+
+
+
+#+end_src
+** Re-enable disabled commands
+
+#+begin_src emacs-lisp
+  (setq disabled-command-function nil)
+  ;(put 'narrow-to-region 'disabled nil)
+#+end_src
 
 ** Theming and fonts
 Most frequently used themes are:
@@ -30,11 +66,6 @@ Most frequently used themes are:
 
   To switch themes during usage: M-X counsel-load-theme
 
-#+begin_src emacs-lisp
-  ;  (set-face-attribute 'default nil :font "Fira Code Retina" :height 120)
-  ;  (set-face-attribute 'fixed-pitch nil :font "Fira Code Retina" :height 120)
-  ;  (set-face-attribute 'variable-pitch nil :font "Cantarell" :height 130 :weight 'regular)
-#+end_src
     
 #+begin_src emacs-lisp
   (defun gwb/after-frame-set-face (frame)
@@ -61,15 +92,19 @@ Most frequently used themes are:
 
   (use-package doom-themes
     ;:init (load-theme 'doom-monokai-classic t)
-    :init (load-theme 'doom-snazzy t)
-    :config (doom-themes-org-config))
+    ;;:init (load-theme 'doom-snazzy t)
+    :init (load-theme 'doom-tomorrow-day t)
+    :config
+    (doom-themes-org-config))
+
+  ;(load-theme 'sanityinc-tomorrow-day)
 #+END_SRC
 
 You must run (all-the-icons-install-fonts) one time after
 installing this package!
 
 #+begin_src emacs-lisp
-(use-package all-the-icons)
+;;(use-package all-the-icons)
 #+end_src
 
 Icons for the doom-modeline has to be set after frame is created, otherwise they won't be
@@ -86,6 +121,7 @@ shown when emacs is started in daemon-mode (same problem as set-face-attribute)
           (setq doom-modeline-major-mode-color-icon t))))
 
   (use-package doom-modeline
+    :disabled t
     :ensure t
     :init (doom-modeline-mode 1)
     :config
@@ -93,8 +129,9 @@ shown when emacs is started in daemon-mode (same problem as set-face-attribute)
     (set-face-attribute 'mode-line nil :background "#323232")
     (set-face-attribute 'mode-line-inactive nil :background "#282828")
     (set-face-attribute 'mode-line-inactive nil :foreground "#464646")
-    (add-hook 'after-make-frame-functions 'gwb/after-frame-modeline)
-    (mapc 'gwb/after-frame-modeline (frame-list)))
+    ;; (add-hook 'after-make-frame-functions 'gwb/after-frame-modeline)
+    ;(mapc 'gwb/after-frame-modeline (frame-list))
+    )
 
 
 #+end_src
@@ -128,8 +165,8 @@ The following is David's special unicode input mode:
 
 #+BEGIN_SRC emacs-lisp
 ;; (add-to-list 'load-path "~/.emacs.d/inputs")
-(add-to-list 'load-path (thread-last user-emacs-directory (expand-file-name "inputs")))
-(require 'darais-input)
+;;(add-to-list 'load-path (thread-last user-emacs-directory (expand-file-name "inputs")))
+;;(require 'darais-input)
 #+END_SRC
 
 ** Fixing basic osx related issues 
@@ -157,21 +194,21 @@ and loads it.
 #+END_SRC
 
 * Outlines
-
+This is messes up with R -- I redefined the outline section below.
 #+begin_src emacs-lisp
-  (use-package outline
-  :init
-  ;;(defvar gwb-outline-minor-mode-map (make-sparse-keymap))
-  :bind
-  (:map outline-minor-mode-map
-        ("M-n" . 'outline-next-visible-heading)
-        ("M-p" . 'outline-previous-visible-heading)
-        ("C-c C-q" . 'hide-body)
-        ("C-c C-o" . 'hide-other)
-        ("C-c C-c" . 'hide-entry)
-        ("C-c C-a" . 'show-all)
-        ("C-c C-e" . 'outline-show-entry)
-        ("C-c C-k" . 'show-branches)))
+  ;; (use-package outline
+  ;; ;;:init
+  ;; ;;(defvar gwb-outline-minor-mode-map (make-sparse-keymap))
+  ;; :bind
+  ;; (:map outline-minor-mode-map
+  ;;       ("M-n" . 'outline-next-visible-heading)
+  ;;       ("M-p" . 'outline-previous-visible-heading)
+  ;;       ("C-c C-q" . 'hide-body)
+  ;;       ("C-c C-o" . 'hide-other)
+  ;;       ("C-c C-c" . 'hide-entry)
+  ;;       ("C-c C-a" . 'show-all)
+  ;;       ("C-c C-e" . 'outline-show-entry)
+  ;;       ("C-c C-k" . 'show-branches)))
 #+end_src
 
 * Window utilities
@@ -179,7 +216,12 @@ and loads it.
 #+begin_src emacs-lisp
   (use-package ace-window
     :ensure t
-    :bind ("M-o" . 'ace-window))
+    :bind ("M-o" . 'ace-window)
+    :config
+    ;; increase size of leading char
+    (custom-set-faces
+     '(aw-leading-char-face
+       ((t (:foreground "red" :height 3.0))))))
 #+end_src
 
 * Search improvements
@@ -198,48 +240,118 @@ Notes:
 ** isearch
 
 #+begin_src emacs-lisp
-  (defun gwb/region-text ()
-    (interactive)
-    (buffer-substring (region-beginning) (region-end)))
+  ;;   (defun gwb/region-text ()
+  ;;     (interactive)
+  ;;     (buffer-substring (region-beginning) (region-end)))
 
-  (defun gwb/isearch-yank-region ()
-    "Yanks the current active region to the isearch minibuffer.
-    The point is moved to the beginning of the region at the end of 
-    the operation, so the first match is always the current region."
-    (interactive)
-    (let ((word (gwb/region-text))
-          (end-word (region-end)))
-      (deactivate-mark)
-      (goto-char end-word)
-      (backward-word)
-      (isearch-yank-string word)))
+  ;;   (defun gwb/isearch-yank-region ()
+  ;;     "Yanks the current active region to the isearch minibuffer.
+  ;;     The point is moved to the beginning of the region at the end of 
+  ;;     the operation, so the first match is always the current region."
+  ;;     (interactive)
+  ;;     (let ((word (gwb/region-text))
+  ;;           (end-word (region-end)))
+  ;;       (deactivate-mark)
+  ;;       (goto-char end-word)
+  ;;       (backward-word)
+  ;;       (isearch-yank-string word)))
 
-  (defun gwb/isearch-yank-word-at-point ()
-    "Yanks the word at point to the isearch minibuffer. This is 
-intended to replace the functionality of `isearch-yank-word-or-char' 
-mapped to C-s C-w, the behavior of which I don't like."
-    (interactive)
-    (let ((word (word-at-point t)))
-      (forward-word)
-      (backward-word)
-      (isearch-yank-string word)))
+  ;;   (defun gwb/isearch-yank-word-at-point ()
+  ;;     "Yanks the word at point to the isearch minibuffer. This is 
+  ;; intended to replace the functionality of `isearch-yank-word-or-char' 
+  ;; mapped to C-s C-w, the behavior of which I don't like."
+  ;;     (interactive)
+  ;;     (let ((word (word-at-point t)))
+  ;;       (forward-word)
+  ;;       (backward-word)
+  ;;       (isearch-yank-string word)))
 
 #+end_src
 
 #+begin_src emacs-lisp
   (use-package isearch
+    :bind
+    (:map isearch-mode-map
+          ("M-m" . gwb/isearch-yank-region)
+          ([remap isearch-yank-word-or-char] . gwb/isearch-yank-word-at-point))
+
+    :init
+    ;; custom functions
+    (defun gwb/region-text ()
+      (interactive)
+      (buffer-substring (region-beginning) (region-end)))
+
+    (defun gwb/isearch-yank-region ()
+      "Yanks the current active region to the isearch minibuffer.
+        The point is moved to the beginning of the region at the end of 
+        the operation, so the first match is always the current region."
+      (interactive)
+      (let ((word (gwb/region-text))
+            (end-word (region-end)))
+        (deactivate-mark)
+        (goto-char end-word)
+        (backward-word)
+        (isearch-yank-string word)))
+
+    (defun gwb/isearch-yank-word-at-point ()
+      "Yanks the word at point to the isearch minibuffer. This is 
+         intended to replace the functionality of `isearch-yank-word-or-char' 
+         mapped to C-s C-w, the behavior of which I don't like."
+      (interactive)
+      (let ((word (word-at-point t)))
+        (forward-word)
+        (backward-word)
+        (isearch-yank-string word)))
+
+    (defun gwb/goto-other-end ()
+      "If search forward, return to beginning of match. If search backward, do 
+  nothing (already goes to beginning automatically"
+      (if (< isearch-other-end (point))
+          (goto-char isearch-other-end)))
+
+    (defun gwb/isearch-exit ()
+      "Modifies the isearch-exit function to return to beginning of 
+  word if succesful match"
+      (interactive)
+      (if (and search-nonincremental-instead
+               (= 0 (length isearch-string)))
+          (let ((isearch-nonincremental t))
+            (isearch-edit-string)) ;; this calls isearch-done as well
+        (isearch-done))
+      (gwb/goto-other-end)
+      (isearch-clean-overlays))
+
+
+    (add-hook 'isearch-mode-hook
+              (lambda ()
+                (define-key isearch-mode-map "\r"
+                            'gwb/isearch-exit)))
+
     :config
     ;; changes highlighting for active and passive matches
     (set-face-attribute 'lazy-highlight nil :background "tan1")
     (set-face-attribute 'isearch nil :background "SkyBlue1")
+
     ;; spaces in search separate different search terms instead
     ;; instad of being interpreted literally
     (setq search-whitespace-regexp ".*")
-    (setq isearch-lax-whitespace t)
+    (setq isearch-lax-whitespace t))
+#+end_src
+
+** deadgrep
+#+begin_src emacs-lisp
+  (use-package deadgrep
+    :demand t
+    :init
+    (defun gwb-deadgrep (search-term)
+      (interactive (list (deadgrep--read-search-term)))
+      (let ((dir (when current-prefix-arg
+                   (message (read-directory-name "where? "))))
+            (current-prefix-arg nil)) 
+        (deadgrep search-term dir)))
+
     :bind
-    (:map isearch-mode-map
-          ("M-m" . gwb/isearch-yank-region)
-          ([remap isearch-yank-word-or-char] . gwb/isearch-yank-word-at-point)))
+    (("M-s g" . gwb-deadgrep)))
 #+end_src
 
 * File navigation
@@ -259,17 +371,20 @@ This needs to be loaded early
 
 #+begin_src emacs-lisp
   (add-hook 'org-mode-hook
-	    (lambda () 
-	      (defhydra hydra-org (org-mode-map "C-.")
-		"Org outline movements"
-		("s" outline-up-heading "step out")
-		("k" outline-next-visible-heading "next")    
-		("j" outline-previous-visible-heading "back")  
-		("f" org-forward-heading-same-level "next (same level)")
-		("d" org-backward-heading-same-level "back (same level)")  
-		("SPC" org-cycle "fold/unfold")
-		("l" org-metaleft "promote")
-		(";" org-metaright "demote"))))
+            (lambda () 
+              (defhydra hydra-org (org-mode-map "C-.")
+                "Org outline movements"
+                ("s" outline-up-heading "step out")
+                ("k" outline-next-visible-heading "next")    
+                ("j" outline-previous-visible-heading "back")  
+                ("f" org-forward-heading-same-level "next (same level)")
+                ("d" org-backward-heading-same-level "back (same level)")  
+                ("SPC" org-cycle "fold/unfold")
+                ("l" org-metaleft "promote")
+                (";" org-metaright "demote"))))
+
+
+  
 #+end_src
 
 
@@ -295,8 +410,10 @@ TODO: make hydras for manipulating windows
   Usage: M-x try
 
 #+BEGIN_SRC emacs-lisp
-    (use-package try
-      :ensure t)
+  (use-package try
+    :ensure t
+    :commands try
+    )
 #+END_SRC
 
 * Magit 
@@ -304,6 +421,7 @@ TODO: make hydras for manipulating windows
 #+BEGIN_SRC emacs-lisp
   (use-package magit
     :ensure t
+    :defer 5
     :bind ("C-x g" . 'magit-status))
 #+END_SRC
 
@@ -327,13 +445,14 @@ TODO: make hydras for manipulating windows
 ** Projectile mode
 
 #+begin_src emacs-lisp
-    (use-package projectile
-      :ensure t
-      :bind-keymap
-      ("C-c p" . projectile-command-map)
-      :config
-      (projectile-mode +1)
-      (setq projectile-completion-system 'ivy))
+      (use-package projectile
+        :ensure t
+        :bind-keymap
+        ("C-c p" . projectile-command-map)
+        :config
+        (projectile-mode +1)
+        ;(setq projectile-completion-system 'ivy)
+        )
     
 #+end_src
 
@@ -352,101 +471,115 @@ TODO: make hydras for manipulating windows
 	- (bind-key [remap projectile-grep] 'projectile-grep projectile-mode-map))
    
 #+BEGIN_SRC emacs-lisp
-  (use-package counsel-projectile
-    :after (counsel projectile)
-    :ensure t
-    :config
-    (counsel-projectile-mode)
-    (define-key projectile-mode-map [remap projectile-grep] nil))
+  ;; (use-package counsel-projectile
+  ;;   :after (counsel projectile)
+  ;;   :ensure t
+  ;;   :config
+  ;;   (counsel-projectile-mode)
+  ;;   (define-key projectile-mode-map [remap projectile-grep] nil))
 #+END_SRC
 
 * Org-mode
-** Basic config
-
-Loads org-mode
-
-(some configs require org to be loaded)
 
 #+begin_src emacs-lisp
-;(require 'org)
-#+end_src
 
-Indent mode
-#+begin_src emacs-lisp
-(add-hook 'org-mode-hook 'org-indent-mode)
-#+end_src
+  (use-package org
+    :defer t
+    :config
+    ;; indent mode
+    (add-hook 'org-mode-hook 'org-indent-mode)
 
-Line wrap 
+    ;; line wrap
+    (add-hook 'org-mode-hook
+              (lambda ()
+                (visual-line-mode 1)))
 
-#+begin_src emacs-lisp
-  (add-hook 'org-mode-hook
-	    (lambda ()
-	      (visual-line-mode 1)))
-#+end_src
+    ;; some basic directories
+    (setq org-directory "~/org")
+    (setq org-default-notes-file "~/org/refile.org")
+    (setq org-agenda-files (quote ("~/org")))
+
+    ;;keybindings
+    (global-set-key (kbd "C-c a") 'org-agenda)
+    (global-set-key (kbd "C-c b") 'org-switchb)
+    (global-set-key (kbd "C-c l") 'org-store-link)
+    (global-set-key (kbd "C-c i") 'org-indent-mode)
+    (global-set-key (kbd "C-c c") 'org-capture)
+
+    ;; some basic configs
+    (setq org-loop-over-headlines-in-active-region t)
+    (setq org-log-done t)
+    (setq org-archive-mark-done nil)
+    (setq org-archive-location "~/org/archive/%s_archive::")
+
+    ;; custom keywords + selection
+    (setq org-todo-keywords
+          '((sequence "TODO(t)" "|" "POSTPONED(p)" "CANCELLED(c)" "DONE(d)")
+            (sequence "IDEA(i)" "|" "IMPLEMENTED")
+            (sequence "TO-READ(r)" "|" "READ")))
+
+    (setq org-use-fast-todo-selection t)
 
 
-Basic directories
+    ;; fonts
 
-#+BEGIN_SRC emacs-lisp
-(setq org-directory "~/org")
-(setq org-default-notes-file "~/org/refile.org")
-(setq org-agenda-files (quote ("~/org")))
-#+END_SRC
+    (defun gwb/org-font-setup ()
+      (dolist (face '((org-level-1 . 1.5)
+                      (org-level-2 . 1.3)
+                      (org-level-3 . 1.1)
+                      (org-level-4 . 1.0)
+                      (org-level-5 . 1.1)
+                      (org-level-6 . 1.1)
+                      (org-level-7 . 1.1)
+                      (org-level-8 . 1.1)))
+        (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
 
-keybindings
+      ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+      (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
+      (set-face-attribute 'org-table nil    :inherit 'fixed-pitch)
+      (set-face-attribute 'org-formula nil  :inherit 'fixed-pitch)
+      (set-face-attribute 'org-code nil     :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-table nil    :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+      (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+      (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+      (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch))
 
-#+BEGIN_SRC emacs-lisp
-(global-set-key (kbd "C-c a") 'org-agenda)
-(global-set-key (kbd "C-c b") 'org-switchb)
-(global-set-key (kbd "C-c l") 'org-store-link)
-(global-set-key (kbd "C-c i") 'org-indent-mode)
-(global-set-key (kbd "C-c c") 'org-capture)
-#+END_SRC
+    (defun gwb/org-font-setup-daemon (frame)
+      (gwb/org-font-setup))
 
+    (add-hook 'after-make-frame-functions 'gwb/org-font-setup-daemon)
 
-Setting up custom keywords + selection
+    (gwb/org-font-setup)
 
-#+BEGIN_SRC emacs-lisp
-(setq org-todo-keywords
-      '((sequence "TODO(t)" "|" "POSTPONED(p)" "CANCELLED(c)" "DONE(d)")
-	(sequence "IDEA(i)" "|" "IMPLEMENTED")
-	(sequence "TO-READ(r)" "|" "READ")))
+    ;; capture
 
-(setq org-use-fast-todo-selection t)
-#+END_SRC
+    (setq org-capture-templates
+          (quote (("t" "todo" entry (file+headline "~/org/refile.org" "Tasks")
+                   "* TODO %?\n %i\n (%U) %a")
+                  ("b" "book to read" entry (file+headline "~/org/books.org" "To read")
+                   "* TO-READ %?\n %i\n")
+                  ("i" "idea" entry (file+headline "~/org/refile.org" "Ideas")
+                   "* IDEA %?\n %i\n")
+                  ("n" "note" entry (file+headline "~/org/refile.org" "Notes")
+                   "* %? :NOTE:\n (%U) %a"))))
 
-** fonts
+    ;; refiling
+    (setq org-refile-targets (quote ((nil :maxlevel . 9)				 
+                                     (org-agenda-files :maxlevel . 9))))
 
-#+begin_src emacs-lisp
-  (defun gwb/org-font-setup ()
-    (dolist (face '((org-level-1 . 1.5)
-		    (org-level-2 . 1.3)
-		    (org-level-3 . 1.1)
-		    (org-level-4 . 1.0)
-		    (org-level-5 . 1.1)
-		    (org-level-6 . 1.1)
-		    (org-level-7 . 1.1)
-		    (org-level-8 . 1.1)))
-      (set-face-attribute (car face) nil :font "Cantarell" :weight 'regular :height (cdr face)))
+    (setq org-refile-use-outline-path 'file)
+    (setq org-goto-interface 'outline-path-completion)
+    (setq org-outline-path-complete-in-steps nil)
+    (setq org-refile-allow-creating-parent-nodes 'confirm)
 
-    ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-    (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
-    (set-face-attribute 'org-table nil    :inherit 'fixed-pitch)
-    (set-face-attribute 'org-formula nil  :inherit 'fixed-pitch)
-    (set-face-attribute 'org-code nil     :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-table nil    :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch))
-
-  (defun gwb/org-font-setup-daemon (frame)
-    (gwb/org-font-setup))
-
-  (add-hook 'after-make-frame-functions 'gwb/org-font-setup-daemon)
-
-  (gwb/org-font-setup)
-
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((R . t)
+       (emacs-lisp . t)
+       (dot . t)
+       (latex . t)))
+    )
 #+end_src
 
 ** Org-bullet
@@ -460,85 +593,128 @@ Setting up custom keywords + selection
     (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 #+end_src
 
-** Archiving
-
-#+begin_src emacs-lisp
-(setq org-archive-mark-done nil)
-(setq org-archive-location "~/org/archive/%s_archive::")
-#+end_src
-
-** Capture & Refiling
-
-org-capture templates
-
-#+BEGIN_SRC emacs-lisp
-(setq org-capture-templates
-      (quote (("t" "todo" entry (file+headline "~/org/refile.org" "Tasks")
-	       "* TODO %?\n %i\n (%U) %a")
-	      ("b" "book to read" entry (file+headline "~/org/books.org" "To read")
-	       "* TO-READ %?\n %i\n")
-	      ("i" "idea" entry (file+headline "~/org/refile.org" "Ideas")
-	       "* IDEA %?\n %i\n")
-	      ("n" "note" entry (file+headline "~/org/refile.org" "Notes")
-	       "* %? :NOTE:\n (%U) %a"))))
-#+END_SRC
-
-Refiling settings
-
-#+begin_src emacs-lisp
-(setq org-refile-targets (quote ((nil :maxlevel . 9)				 
-                                 (org-agenda-files :maxlevel . 9))))
-
-(setq org-refile-use-outline-path 'file)
-(setq org-goto-interface 'outline-path-completion)
-(setq org-outline-path-complete-in-steps nil)
-(setq org-refile-allow-creating-parent-nodes 'confirm)
-#+end_src
 
 ** Babel
 
 #+BEGIN_SRC emacs-lisp
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((R . t)
-     (emacs-lisp . t)
-     (dot . t)
-     (latex . t)))
+
 #+END_SRC
 
-** Simple customization
+* Dired
 
-Batch apply operation to subtree:
-  Allows to quickly apply an action over all headlines in the active region:
-
-#+BEGIN_SRC emacs-lisp
-(setq org-loop-over-headlines-in-active-region t)
-#+END_SRC
-
-  - Comment: 
-    For instance if I want to set the same deadline for all items in my Today headline, I can put the cursor on Today then press: 
-    
-    M-h C-c C-d RET (then RET a bunch of times)
-
-    The M-h part will automatically select all the subtree, and C-c C-d will set the deadline.
-
-Auto logs
-
-#+BEGIN_SRC emacs-lisp
-(setq org-log-done t)
-#+END_SRC
-
-** Source blocks
-
-This is function will be bound to TAB in my personal keymap
 #+begin_src emacs-lisp
-  ;; stole this snippet from somewhere on the internet
-  (defun gwb/indent-org-block ()
+
+  (defun gwb-dired-kill-hidden nil
     (interactive)
-    (when (org-in-src-block-p)
-      (org-edit-special)
-      (indent-region (point-min) (point-max))
-      (org-edit-src-exit)))
+    (dired-mark-files-regexp "^\\.")
+    (dired-do-kill-lines))
+
+
+    (use-package dired
+      :bind
+      (:map dired-mode-map
+            ("." . gwb-dired-kill-hidden))
+      :config
+      (setq insert-directory-program "gls")
+      (setq dired-listing-switches "-alh --group-directories-first"))
+#+end_src
+* Vertico | Orderless | Consult | Marginalia
+#+begin_src emacs-lisp
+  (use-package vertico
+    :init
+    (setq completion-in-region-function
+          (lambda (&rest args)
+            (apply (if vertico-mode
+                       #'consult-completion-in-region
+                     #'completion--in-region)
+                   args)))
+    (vertico-mode))
+
+    (use-package vertico-directory
+      :after vertico
+      :ensure nil
+      ;; More convenient directory navigation commands
+      :bind (:map vertico-map
+                  ("RET" . vertico-directory-enter)
+                  ("DEL" . vertico-directory-delete-char)
+                  ("M-DEL" . vertico-directory-delete-word))
+      ;; Tidy shadowed file names
+      :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+
+  ;; allows vertico to sort by history position
+  (use-package savehist
+    :init
+    (savehist-mode))
+
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package orderless
+    :demand t
+    :custom
+    (setq completion-styles '(orderless basic)
+          completion-category-defaults nil
+          completion-category-overrides '((file (styles partial-completion))
+                                          (symbol (styles
+                                                   ;; orderless-strict-leading-initialism
+                                                   orderless-literal
+                                                   orderless-regexp))))
+    :config
+    (setq completion-styles '(orderless)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package marginalia
+    :init
+    (marginalia-mode)
+    :bind
+    (:map minibuffer-local-map
+          ("M-A" . marginalia-cycle)))
+#+end_src
+
+
+#+begin_src emacs-lisp
+  (use-package embark
+    :bind
+    (("C-." . embark-act)
+     ("M-." . embark-dwim)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package recentf
+    :commands (recentf-mode
+               recentf-add-file
+               recentf-apply-filename-handlers))
+
+  (use-package consult
+    :config                               ;; or :init?
+    (recentf-mode)
+    :bind
+    (("C-x b" . consult-buffer)
+     ("M-y" . consult-yank-pop)
+     ("M-g g" . consult-goto-line)
+     ("M-g o" . consult-outline)))
+
+
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package embark-consult
+    :after (embark consult))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package corfu
+    :init
+    (global-corfu-mode)
+    :custom
+    (corfu-cycle t)
+    :bind
+    (:map corfu-map
+          ("TAB" . corfu-next)
+          ([tab] . corfu-next)
+          ("S-TAB" . corfu-previous)
+          ([backtab] . corfu-previous)))
 #+end_src
 
 * Ivy / counsel
@@ -550,110 +726,216 @@ Company does a lot of things:
 
 #+begin_src emacs-lisp
 
-  (use-package gwb-ivy
-  :after counsel
-  :demand t
-  :bind (("M-s z" . gwb-counsel-fzf)))
+  ;; (use-package gwb-ivy
+  ;; :after counsel
+  ;; :demand t
+  ;; :bind (("M-s z" . gwb-counsel-fzf)))
 
 #+end_src
 
 #+begin_src emacs-lisp
-  (use-package counsel
-    :after ivy
-    :ensure t
-    :demand t
-    :bind (("M-x" . counsel-M-x)
-	   ("C-x C-f" . counsel-find-file)
-	   ("C-h f" . counsel-describe-function)))
+  ;; (use-package counsel
+  ;;   :after ivy
+  ;;   :ensure t
+  ;;   :demand t
+  ;;   :bind (("M-x" . counsel-M-x)
+  ;;          ("C-x C-f" . counsel-find-file)
+  ;;          ("C-h f" . counsel-describe-function)
+  ;;          ("M-y" . counsel-yank-pop)))
 #+end_src
 
 #+begin_src emacs-lisp
-  (use-package ivy
-    :ensure t
-    :demand t
-    :bind (:map ivy-minibuffer-map
-		("C-j" . ivy-immediate-done)
-		("RET" . ivy-alt-done))
-    :config
-    (ivy-mode 1)
-    (setq ivy-initial-inputs-alist nil)
-    (setq ivy-use-virtual-buffers t)
-    (setq ivy-count-format "(%d/%d) "))
+  ;; (use-package ivy
+  ;;   :ensure t
+  ;;   :demand t
+  ;;   :bind (:map ivy-minibuffer-map
+  ;; 	      ("C-j" . ivy-immediate-done)
+  ;; 	      ("RET" . ivy-alt-done))
+  ;;   :config
+  ;;   (ivy-mode 1)
+  ;;   (setq ivy-initial-inputs-alist nil)
+  ;;   (setq ivy-use-virtual-buffers t)
+  ;;   (setq ivy-count-format "(%d/%d) "))
 #+end_src
 
 #+begin_src emacs-lisp
-(use-package ivy-rich
-:ensure t
-:init (ivy-rich-mode 1)
-)
+  ;; (use-package ivy-rich
+  ;; :ensure t
+  ;; :demand t
+  ;; :init (ivy-rich-mode 1)
+  ;; )
 #+end_src
 
 #+begin_src emacs-lisp
-(use-package ivy-hydra)
+;(use-package ivy-hydra)
 #+end_src
+
+* (w) grep 
 
 Make grep buffer writable. Allows one to edit occur buffers by:
 - Running C-x C-q to make occur buffer writable
 - ... making whatever change
 - Running C-x C-s to save changes. The changes will be written in to the source files.
 #+begin_src emacs-lisp
-(use-package wgrep)
+(use-package wgrep :defer 5)
+#+end_src
+
+* Undoo-tree
+
+#+begin_src emacs-lisp
+  (use-package undo-tree
+    :ensure t
+    :config
+    (global-undo-tree-mode)
+    :bind
+    (("C-z" . undo-tree-undo)
+     ("M-z" . undo-tree-redo)))
 #+end_src
 
 * Company
 
 #+begin_src emacs-lisp
-  (use-package company
-    :ensure t
-    ;;:init (global-company-mode 1)
-    :bind (:map company-active-map
-                ("C-n" . company-select-next-or-abort)
-                ("C-p" . company-select-previous-or-abort)))
+    (use-package company
+      :hook ((c-mode . company-mode)
+             ;(ess-r-mode . company-mode)
+             ;(inferior-ess-r-mode . company-mode)
+             )
+      :bind (:map company-active-map
+                  ("C-n" . company-select-next-or-abort)
+                  ("C-p" . company-select-previous-or-abort))
+      :config
+      (setq company-idle-delay nil))
 #+end_src
 
+
+In some situations, we don't want to autocomplete (e.g. when trying to
+autocomplete paths with many files
+
+#+begin_src emacs-lisp
+  ;; (setq company-completion-started-hook
+  ;;      (lambda (is-manual)
+  ;;
+  ;;(when (home-dir-path (thing-at-point 'line t))
+  ;;          (message "harshly cancelling completion")
+  ;;          (company-cancel))))
+#+end_src
+
+
+#+begin_src emacs-lisp
+  (use-package company-c-headers
+    :after (company)
+    :config
+    (add-to-list 'company-backends 'company-c-headers)
+    (add-to-list 'company-c-headers-path-system "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"))
+#+end_src
+
+
+#+begin_src emacs-lisp
+  (use-package gwb-indent
+    :after company)
+#+end_src
+
+* Avy
+#+begin_src emacs-lisp
+  (use-package avy
+    :bind (("M-j" . avy-goto-char-timer)))
+#+end_src
 * Helpful
 
 #+begin_src emacs-lisp
 (use-package helpful
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
+  ;;:custom
+  ;;(counsel-describe-function-function #'helpful-callable)
+  ;;(counsel-describe-variable-function #'helpful-variable)
   :bind
-  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-function] . helpful-callable)
   ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-variable] . helpful-variable)
   ([remap describe-key] . helpful-key))
 #+end_src
 
 * Yasnippet
 #+begin_src emacs-lisp
-(use-package yasnippet
-  :ensure t
-  :init
-    (yas-global-mode 1))
+  (use-package yasnippet
+    :hook (python-mode . yas-minor-mode))
+
+  ;; (use-package yasnippet
+  ;;   :ensure t
+  ;;   :disabled t
+  ;;   :init
+  ;;     (yas-global-mode 1))
 #+end_src
 
-* Programming languages
-** Language servers
-   #+begin_src emacs-lisp
-     ;; (use-package lsp-mode
-     ;;   :ensure t
-     ;;   :commands (lsp lsp-deferred)
-     ;;   :init
-     ;;   (setq lsp-keymap-prefix "C-c l")
-     ;;   :hook ((ess-r-mode . lsp-deferred))
-     ;;   :config
-     ;;   (lsp-enable-which-key-integration t)
-     ;;   (setq lsp-diagnostics-provider :none))
-   #+end_src
-** Misc languages
+* Outlining
+#+begin_src emacs-lisp
+  (use-package outline
+    :commands outline-minor-mode
+    :init
+    (add-hook 'emacs-lisp-mode-hook
+              #'(lambda () (setq-local outline-regexp "[;\f][;\f] [*\f]+"))))
+
+  (add-hook 'prog-mode-hook 'outline-minor-mode)
+  (add-hook 'prog-mode-hook 'hs-minor-mode)
+#+end_src
 
 #+begin_src emacs-lisp
-  (use-package julia-mode 
-    :ensure t)
+  (use-package bicycle
+    :after outline
+    :bind (:map outline-minor-mode-map
+                ("M-S-]" . bicycle-cycle)
+                ("C-M-]" . bicycle-cycle-global)))
+#+end_src
+
+
+* Programming languages
+
+** Inherited by all
+#+begin_src emacs-lisp
+  (add-hook 'prog-mode-hook #'(lambda () (setq-local tab-always-indent 'complete)))
+#+end_src
+
+** Misc languages
+
+I have played around, at some point or another, with many programming languages. This section deals with the languages for which the config is minimal (or non-existent). 
+
+#+begin_src emacs-lisp
+  (use-package julia-mode
+    :ensure t
+    :mode "\\.jl\\'")
+
+  (use-package markdown-mode
+    :ensure t
+    :mode (("\\.md\\'" . markdown-mode)
+           ("\\.Rmd\\'" . markdown-mode)))
+
+  (use-package elm-mode
+    :ensure t
+    :mode "\\.elm\\'")
+
+  (use-package haskell-mode
+    :ensure t
+    :mode "\\.hs\\'"
+    :hook (haskell-mode . interactive-haskell-mode))
+
+  (use-package rust-mode
+    :mode "\\.rs\\'"
+    :init
+    (add-hook 'rust-mode (lambda () (setq indent-tabs-mode nil))))
+#+end_src
+
+** Lisp languages
+
+#+begin_src emacs-lisp
+  (use-package lispy
+    :ensure t
+    :hook ((emacs-lisp-mode . lispy-mode)
+           (scheme-mode . lispy-mode))
+    :bind (:map lispy-mode-map
+                ("M-o" . nil)))
 
   (use-package racket-mode 
     :ensure t
+    :mode "\\.rkt\\'"
     :config
     (setq tab-always-indent 'complete)
     (require 'racket-xp)
@@ -662,32 +944,54 @@ Make grep buffer writable. Allows one to edit occur buffers by:
   (use-package slime
     :commands slime
     :init
-    (load (expand-file-name "~/.quicklisp/slime-helper.el"))
-    (setq inferior-lisp-program "sbcl"))
+    (setq inferior-lisp-program "sbcl")
+    :config
+    (load (expand-file-name "~/.quicklisp/slime-helper.el")))
 
-  ;; python
-
-;;  (use-package python
-;;    :ensure t
-;;    :config
-;;    (setq python-shell-completion-native-enable nil)) ;; otherwise, elpy raises warning
-
-;;  (use-package elpy
-;;    :ensure t
-;;    :init
-;;    (elpy-enable))
-;;
+  (use-package emacs-lisp-mode
+    :hook (emacs-lisp-mode . hs-minor-mode)
+    :bind (:map emacs-lisp-mode-map
+                ("M-[" . hs-hide-all)
+                ("M-]" . hs-show-all)))
 #+end_src
-** Lisp
+
+** BQN
+#+begin_src emacs-lisp
+  (use-package bqn-mode
+    :init (require 'gwb-bqn)
+    :commands (bqn-comint-buffer)
+    :config (add-hook 'bqn-comint-mode-hook #'gwb-amend-bqn-comint-mode)
+    :bind (:map bqn-mode-map
+                ("C-c C-c" . bqn-comint-send-dwim)))
+#+end_src
 
 #+begin_src emacs-lisp
-  (use-package lispy
-    :ensure t
-    :hook (emacs-lisp-mode . lispy-mode)
-    :bind (:map lispy-mode-map
-                ("M-o" . nil)))
+  ;; (use-package gwb-bqn
+  ;;   :requir
+  ;;   :after bqn-comint-mode
+  ;;   :hook
+  ;;   (bqn-comint-mode-hook . gwb-amend-bqn-comint-mode)
+  ;;   :config
+  ;;   (gwb-amend-bqn-comint-mode))
 #+end_src
 
+** 
+#+begin_src emacs-lisp
+  (use-package ngnk-cli
+    :mode "\\.k\\'"
+    :config (setq ngnk-cli-file-path "/Users/gwb/Hacks/repos/k/k")
+    :bind (:map ngnk-cli-map ("C-c C-r" . ngnk-send-region)
+                             ("C-c C-c" . ngnk-send-line-at-point))
+
+    )
+#+end_src
+
+** J
+#+begin_src emacs-lisp
+  (use-package j-mode
+   :custom
+   (j-console-cmd "jconsole"))
+#+end_src
 ** R
 
 ESS is (used to be?) fiddly to setup correctly.
@@ -712,138 +1016,409 @@ ESS is (used to be?) fiddly to setup correctly.
 
 
 #+begin_src emacs-lisp
-  (use-package ess
-    :defer t)
+        (use-package ess
+          :defer t)
 
-  (use-package ess-r-mode
-    :bind
-    (:map
-     ess-r-mode-map
-     ("_" . ess-insert-assign)
-     :map
-     inferior-ess-r-mode-map
-     ("_" . ess-insert-assign)))
+        (use-package ess-r-mode
+          :hook
+          ((ess-r-mode . hs-minor-mode)
+           (ess-r-mode . outline-minor-mode))
+          :bind
+          (:map
+           ess-r-mode-map
+           ;("TAB" . gwb-indent-for-tab-command)
+           ("_" . ess-insert-assign)
+           ("M-[" . hs-hide-all)
+           ("M-]" . hs-show-all)
+           :map
+           inferior-ess-r-mode-map
+           ;("TAB" . gwb-indent-for-tab-command)
+           ("_" . ess-insert-assign)
+           ("M-[" . hs-hide-all)
+           ("M-]" . hs-show-all)))
+
+
+#+end_src
+
+Below are my customizations for ESS. A few comments:
+
+
+
+#+begin_src emacs-lisp
+    (use-package gwb-essr
+      :after ess-r-mode
+      ;; :demand t
+      :commands (gwb-essr-configure-iess gwb-essr-configure-ess-r)
+      :hook
+      ((inferior-ess-r-mode . gwb-essr-configure-iess)
+       (ess-r-mode . gwb-essr-configure-ess-r))
+      :bind
+      (:map
+       ess-r-mode-map
+       ("%" . gwb-essr-insert-pipe-maybe)
+       ("M-TAB" . gwb-essr-toggle-hide-function)
+       :map
+       inferior-ess-r-mode-map
+       ("%" . gwb-essr-insert-pipe-maybe)
+       ("M-TAB" . gwb-essr-toggle-hide-function))
+      :config
+      (advice-add 'ess-r-object-completion :filter-return #'gwb-essr--add-docsig))
+
+#+end_src
+
+** C / C++
+
+#+begin_src emacs-lisp
+  (defhydra dumb-jump-hydra (:hint nil :color blue)
+      "
+  Dumb jump
+  "
+      ("j" dumb-jump-go "Go")
+      ("o" dumb-jump-go-other-window "Other window")
+      ("e" dumb-jump-go-prefer-external "Go external")
+      ("x" dumb-jump-go-prefer-external-other-window "Go external other window")
+      ("i" dumb-jump-go-prompt "Prompt")
+      ("l" dumb-jump-quick-look "Quick look")
+      ("b" dumb-jump-back "Back"))
 #+end_src
 
 #+begin_src emacs-lisp
-  ;; (use-package ess
-  ;;   :ensure t
-  ;;   :init (require 'ess-site)
-  ;;   :config
-  ;;   (setq ess-r-backend 'lsp)
-  ;;   (setq ess-use-flymake nil))
+  (use-package cc-mode
+    :init
+    (defun gwb/clang-capf-init ()
+      (add-hook 'completion-at-point-functions #'clang-capf nil t))
+    (defun gwb/dumb-jump-init ()
+      (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
+      (setq xref-show-definitions-function #'xref-show-definitions-completing-read))
+    :defer t
+    :config
+    (setq c-default-style "linux")
+    (setq c-basic-offset 4)
+    (add-hook 'c-mode-hook #'gwb/clang-capf-init)
+    (add-hook 'c-mode-hook #'gwb/dumb-jump-init)
+
+    :bind (:map c-mode-map
+                ("TAB" . indent-for-tab-command)
+                ("C-j" . dumb-jump-hydra/body)
+                ("M-[" . hs-show-all)
+                ("M-]" . hs-hide-all)
+                ("C-]" . hs-toggle-hiding)))
 #+end_src
-   
+
 #+begin_src emacs-lisp
-  ;;(add-to-list 'load-path "~/.emacs.d/ESS/lisp")
-  ;;(require 'ess-site)
-  ;; (use-package ess-site
-  ;;   :demand t
-  ;;   :config
-  ;;   (setq comint-scroll-to-bottom-on-input t)
-  ;;   (setq comint-scroll-to-bottom-on-output t)
-  ;;   (setq comint-move-point-for-output t)
-  ;;   ;; tab will try to indent first, then autocomplete
-  ;;   (setq ess-tab-complete-in-script t))
+  (use-package c++-mode
+    :hook ((c++-mode . eglot-ensure)))
 
+  (use-package eglot
+    :defer t
+    :config
+    (add-to-list 'eglot-server-programs '(c++-mode . ("/usr/local/opt/llvm/bin/clangd"))))
 #+end_src
-
 ** Latex
 
+#+begin_src emacs-lisp
+  (use-package auctex
+    :mode ("\\.tex\\'" . TeX-latex-mode)
+    :config
+    (require 'reftex)
+    (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+    (setq reftex-plug-into-AUCTeX t)
+
+    ;; Auxtex
+    (setq TeX-auto-save t)
+    (setq TeX-parse-self t)
+
+    ;; PDF search
+    (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
+    (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+
+    (setq TeX-PDF-mode t)
+    (when (eq system-type 'darwin)
+      (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
+      (setq TeX-view-program-list
+    '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+      )
+
+
+    ;; (use-packag auctex-latexmk) 
+    (require 'auctex-latexmk)
+    (auctex-latexmk-setup)
+    (setq auctex-latexmk-inherit-TeX-PDF-mode t)
+
+    ;; Only change sectioning colour
+    (setq font-latex-fontify-sectioning 'color)
+    ;; super-/sub-script on baseline
+    (setq font-latex-fontify-script nil) ; might not keep this line.. I like smaller {sub/super}scripts
+    (setq font-latex-script-display (quote (nil)))
+    ;; Do not change super-/sub-script font
+
+
+    (setq font-latex-deactivated-keyword-classes
+          '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
+    )
+#+end_src
+
 
 #+begin_src emacs-lisp
-;; Reftex
-(require 'reftex)
-(add-hook 'LaTeX-mode-hook 'turn-on-reftex)
-(setq reftex-plug-into-AUCTeX t)
+  ;; ;; Reftex
+  ;; (require 'reftex)
+  ;; (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+  ;; (setq reftex-plug-into-AUCTeX t)
 
-;; Auxtex
-(setq TeX-auto-save t)
-(setq TeX-parse-self t)
+  ;; ;; Auxtex
+  ;; (setq TeX-auto-save t)
+  ;; (setq TeX-parse-self t)
 
-;; PDF search
-(add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
-(add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+  ;; ;; PDF search
+  ;; (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
+  ;; (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
 
-(setq TeX-PDF-mode t)
-(when (eq system-type 'darwin)
-  (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
-  (setq TeX-view-program-list
-'(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
-  )
-
-(require 'auctex-latexmk)
-(auctex-latexmk-setup)
-(setq auctex-latexmk-inherit-TeX-PDF-mode t)
-
-;; Only change sectioning colour
-(setq font-latex-fontify-sectioning 'color)
-;; super-/sub-script on baseline
-(setq font-latex-fontify-script nil) ; might not keep this line.. I like smaller {sub/super}scripts
-(setq font-latex-script-display (quote (nil)))
-;; Do not change super-/sub-script font
+  ;; (setq TeX-PDF-mode t)
+  ;; (when (eq system-type 'darwin)
+  ;;   (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
+  ;;   (setq TeX-view-program-list
+  ;; '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
+  ;;   )
 
 
-(setq font-latex-deactivated-keyword-classes
-    '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
+  ;; ;; (use-packag auctex-latexmk) 
+  ;; (require 'auctex-latexmk)
+  ;; (auctex-latexmk-setup)
+  ;; (setq auctex-latexmk-inherit-TeX-PDF-mode t)
+
+  ;; ;; Only change sectioning colour
+  ;; (setq font-latex-fontify-sectioning 'color)
+  ;; ;; super-/sub-script on baseline
+  ;; (setq font-latex-fontify-script nil) ; might not keep this line.. I like smaller {sub/super}scripts
+  ;; (setq font-latex-script-display (quote (nil)))
+  ;; ;; Do not change super-/sub-script font
+
+
+  ;; (setq font-latex-deactivated-keyword-classes
+  ;;     '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
 
 #+end_src
 
 ** Python
 
-First configure the python interpreter being used. This uses 
-the Python package (not elpy).
+*** Description of the setup
 
-Question: python vs python mode?
+The python setup in emacs is a wee bit complicated. There are generally roughly 4 parts:
+
+1. The major mode that provides things like syntax highlighting, bindings to the interpreter,
+  etc...
+2. An "orchestrating minor mode" that communicates with outside binaries or other minor modes to provide things "ide-like" features like completion, linting, formatting, etc...
+3. The suite of binaries, other minor modes providing the individual functionalities listed above
+4. The minor modes that deal with the display of information (corfu/company, flymake/flycheck, etc...)
+
+There are a few options for each of these: picking the right components and having them working nicely in concert requires some fiddling.
+
+*Major mode*:
+
+I'm using emacs's built-in `python-mode`. I'm not sure there are any popular
+alternatives at the moment. The syntax highlighting it provides is not great. A specific alternative for syntax-highlighting uses `tree-sitter`. I should investigate that at some point.
+
+TODO: investigate `tree-sitter`
+
+*Orchestrating minor mode*:
+
+This is the biggest decision-point. I used rely on `elpy` for it, but it was fiddly and unreliable for me. I stopped using it in frustration and went back to using only python-mode but I missed having things like code signature in the minibuffer, decent auto-completion, etc.. 
+
+I have now switched to `lsp-mode` which is a client interface for the Language Server Protocol. It provides a generic client infrastructure that simplifies the task of writing concrete clients for specific languages. The important thing to understand about the lsp setup is that it involves 3 components:
+
+1. lsp-mode: the emacs package that provides the generic interface
+      
+2. the language server. This is not an emacs-specific thing: these are external programs that provides language services for specific languages, and that the client connects to. For popular languages, there may be a few different server options to choose from. For python, there are 3 options:
+   
+   - pyls
+   - pylsp
+   - pyright
+     
+   The `pyls` server was developped by Palantir and seems to have been abandonned -- or at least, it seems to no longer be supported. The `pylsp` server is a fork of `pyls` that is still maintained. The `pyright` server is supported by microsoft.
+
+3. The concrete client implementation. As I said, `lsp-mode` provides the generic client interface (i.e. you can use lsp-mode for many different languages) but you still need a specific client implementation. Generally you need an specific implementation for each language server. There can be different implementations for a given server, but that doesn't seem to be the case at the moment. The clients are:
+   
+   - lsp-pyls     => included in lsp-mode
+   - lsp-pylsp    => included in lsp-mode
+   - lsp-pyright  => provided by the `lsp-pyright` package
+
+
+I am currently using `pylsp` server (installed via `pip3 install python-lsp-server`) and the `lsp-pylsp` client included in the `lsp-mode` emacs package that also provides `lsp-mode`.
+
+
+*Additional tools*
+
+The lsp server (so in my case `pylsp`) relies on external tools to deliver some of its optional functionalities. To complicate things further, there may be several tools to choose from for given functionalitites: it really is an embarassement of riches! Below are some of the optional functionalities (non-exhaustive) that `pylsp` can provide and some of the tools that can be used to provide them:
+
+- type-checking: pylsp-mypy. Note: the `pyright` server seems to do type-checking out of the box, but pylsp requires the `pylsp-mypy`, which can be installed with a simple `pip install pylsp-mypy` (make sure its in the same environment).
+
+- Error + Pep8 style checking: flake8 or pylint (there are in fact many other options, but these are the main ones)
+
+  I've decided to go with *flake8* for now because the `lsp-pylsp` client shipped with `lsp-mode` has better support for it than for pylint -- by which I mean that it makes it easier to specify configs for flake8 that will then be sent to the server.
+  
+- Reformatting: autopep8 vs yapf (again, many more options)
+
+  I'm currently *not* using an automatic formatter. If decide to do so, `yapf` seems to be the preferred option.
+
+- Completion and refactoring: jedi or rope.
+
+  I've been using the default, which is `jedi`, although I've been using it for completion mostly, not refactoring. From the `rope` website, it seems that `rope` is focused on recactoring. At this point, I mostly care about completion so I'll stick to `jedi`.
+
+- Poetry: I'm experimenting with poetry as a dependency manager.
+  + M-x poetry will start the menu with options, etc..
+  + To use the packages installed with poetry in the repl, you need to activate the
+    virtualenv (M-x poetry activate) then just M-x run-python. Note that you need to
+    install ipython in the virtualenv for it to work (M-x poetry add ipython). Preferably,
+    install it as a dev dependency.   
+  + To use the lsp server (which gives you completion, etc..) with poetry, you need to
+    install the python-sp-server as a dev dependency in poetry, then activate the virtualenv,
+    then visit a python file, etc...
+
+*Complementary emacs modes*
+
+Finally, `lsp-mode` relies on other emacs packages for certain functionalities. E.g.
+
+- Completion: can use company or the built-in completion-at-point facilities (in which case, we can use things like corfu, etc...)
+- Flycheck or Flymake. `Flymake` is built into emacs but `Flycheck` is the recommended option for `lsp-mode`.
+  I've tried both and I like `Flycheck`:
+  + It has nice introspection facilities so you can see what's happening with the mode. E.g. `M-X flycheck-verify-setup` is very informative. Note that when used in concert with `lsp-mode`, flycheck basically uses `lsp` as it's "checking" backend.
+  + You can list all errors easily `M-x list-flycheck-errors` (flymake can probably do that as well)
+  + You can jump to the next error `C-c ! n`
+      
+
+*** Config
+
+As described above, some additional packages, modules must exist for my config to work optimally. Thankfully, nothing *breaks* if I don't have things installed: the optional features just won't be turned on. So in addition to 'lsp-mode', I rely on the following:
+
+- [emacs package] flycheck 
+- [pip install] flake8
+- [pip install] pylsp-mypy
+- [pip install] jedi 
 
 #+begin_src emacs-lisp
+  (use-package lsp-mode
+    :defer t                   ; ok to defer, will be loaded when needed
+    :config
+    ;; the pyright server has higher precedence than pylsp so need to disable it so
+    ;; lsp uses pylsp
+    ;; (setq lsp-clangd-binary-path "/usr/local/opt/llvm/bin/clangd")
+    (setq lsp-disabled-clients (cons 'pyright lsp-disabled-clients)))
+#+end_src
+
+Additional notes on lsp-mode:
+
+The `lsp-mode` package provides helpful messages / debugging facilities to see what's happening with the server / client communication. e.g.
+- The *lsp-log* buffer
+- The *lsp-stderr* buffer
+- M-x lsp-describe-session
+
+A note about completion: it works by adding its own backend in the list of `completion-at-point-functions`. The backend is called `lsp-completion-at-point`. You should see it if you type `C-h v completion-at-point-functions`.
+
+#+begin_src emacs-lisp
+  (defun gwb-py-get-menu nil
+    (interactive)
+    (occur "# \\*"))
+
   (use-package python
-        :ensure nil
-        :config
-        (setq python-shell-interpreter "ipython3")
-        (setq python-shell-interpreter-args "-i --simple-prompt"))
+    :ensure nil
+    :mode ("\\.py\\'" . python-mode)
+    :interpreter ("python" "python3")
+    :hook
+    (python-mode . (lambda ()
+                                          ;(require 'lsp-pyright)
+                     (lsp)))
+                                          ;:bind
+                                          ;(:map python-mode-map
+                                          ;      ("TAB" . gwb-indent-for-tab-command))
+    :config
+    ;; => uncomment two below
+    (setq python-shell-interpreter "ipython3")
+    (setq python-shell-interpreter-args "-i --simple-prompt")
+    :bind
+    (:map python-mode-map
+          ("C-c =" . gwb-py-get-menu))
+    )
 
 #+end_src
 
+
+**Pesky warning in repl**
+
+When upgrading ipython to use python 3.11, I started seeing the following error:
+
+#+begin_quote
+Warning (python): Your ‘python-shell-interpreter’ doesn’t seem to support readline, yet ‘python-shell-completion-native-enable’ was t and "ipython3" is not part of the ‘python-shell-completion-native-disabled-interpreters’ list.  Native completions have been disabled locally. Consider installing the python package "readline". 
+#+end_quote
+
+I've had similar issues in the past. I took the time to track this down, and apparently
+it comes down to the `readline` module that is built into python. Different pythons use readline modules linking to different c readline libraries: `libedit` or `gnureadline`.
+You can check which version your ipython uses (assuming that you want to use ipython as
+your repl)
+
+#+begin_quote
+import readline
+print(readline.__doc__)
+#+end_quote
+
+If you see:
+
+~Importing this module enables command line editing using libedit readline.~
+
+Then you'll see warning: you need to make sure your interpreter uses the gnureadline
+version. I don't know how to force pick a version of ipython3 that has gnureadline. Instead,
+I'm using the following trick:
+
+1. pip install gnureadline
+2. automatically run some code on ipython startup so it tricks python into importing
+   gnureadline when it wants to import readline. The python code you want to run is
+
+   #+begin_quote
+   import gnureadline
+   import sys
+   sys.modules["readline"] = gnureadline
+   #+end_quote
+
+   To make sure ipython runs it on startup you need to to run
+
+   #+begin_quote
+   ipython3 profile create
+   #+end_quote
+
+   from the command line. This will create a ~.ipython/profile_default/ipython_config.py
+   file with a bunch of stuff commented out in it. You just need to make sure that you
+   have the following in the file:
+
+   #+begin_quote
+   c = get_config()  #noqa
+   c.InteractiveShellApp.exec_lines = ['import gnureadline', 'import sys', 'sys.modules["readline"] = gnureadline']   
+   #+end_quote
+
+   You also need to make sure that you've passe the "-i --simple-prompt" arguments to
+   python-shell-interpreter-args (as in the above config).
+   
+For `elpy-mode`, the config requires a bit more explaining. The Elpy package provides the `elpy-enable' command which provides a wrapper around the `elpy-mode' command which actually activates the minor mode. The minor mode command `elpy-mode` does a few things in its body, including setting up some special configs for `company`. One thing it does, which I don't like, is to setup autocompletion by setting `(setq company-idle-delay 0.1)`. So I'm basically writing as small hook around `elpy-mode` to deactivate auto-complete every time elpy-mode is called.
 
 #+begin_src emacs-lisp
-  (use-package elpy
-    :ensure t
-    :hook (python-mode . elpy-enable)
-    :custom
-    (elpy-rpc-python-command "python3"))
-    ;;:init
-    ;;(elpy-enable))
-    ;;(setq python-shell-interpreter-args "-c exec('__import__(\\'readline\\')') -i"))
+   (defun gwb-no-company-idle nil
+     (setq company-idle-delay nil))
+
+  ;; (use-package elpy
+  ;;   :init
+  ;;   (elpy-enable))
+
+   ;; (use-package elpy
+   ;;   :hook ((elpy-mode . gwb-no-company-idle)
+   ;;          (python-mode . elpy-enable))
+   ;;   :custom
+   ;;   (elpy-rpc-python-command "python3")
+   ;;   )
+   ;;:init
+   ;;(elpy-enable))
+   ;;(setq python-shell-interpreter-args "-c exec('__import__(\\'readline\\')') -i"))
 #+end_src
 
-#+begin_src emacs-lisp
-  ;;(use-package python-mode
-  ;;  :ensure t
-  ;;  :hook (python-mode . lsp-deferred)
-  ;;  :custom
-  ;;  (setq python-shell-interpreter "python3"))
-    ;;(setq python-shell-completion-native-enable nil)
-    ;;(setq python-shell-interpreter-args "-i"))
 
-#+end_src
 
-Now we configure elpy
-
-#+begin_src emacs-lisp
-;;(use-package elpy
-;;  :ensure t
-;;  :init
-;;  (elpy-enable))
-#+end_src
-
-** Haskell
-#+begin_src emacs-lisp
-  (use-package haskell-mode
-  :ensure t
-  :hook (haskell-mode . interactive-haskell-mode)
-   )
-#+end_src
 * terminals
 Useful keybindings for terminal:
 - C-c C-k: term-char-mode (can't use usual emacs bindings)
@@ -855,6 +1430,7 @@ Useful keybindings for terminal:
 #+begin_src emacs-lisp
   (use-package term
     :ensure nil
+    :commands term
     :config
     (setq term-prompt-regexp "^[^#$%>\\n]*[#$%>] *"))
 
@@ -865,34 +1441,20 @@ Useful keybindings for terminal:
 
 * Custom functions
 
-#+begin_src emacs-lisp
-(use-package gwb-hugo) ;; allows to quickly start and kill hugo servers
-#+end_src
-
-Mark word
+Spotify custom utilities
 
 #+begin_src emacs-lisp
-(defun gwb/mark-word-at-point ()
-  (interactive)
-  (let ((word (word-at-point t)))
-    (progn
-      (forward-word)
-      (backward-word)
-      (set-mark-command 'nil)
-      (search-forward word))))
+  (use-package elspot
+    :commands hydra-spotify/body)
 #+end_src
 
-My usual latex note template
+Hugo utilities
 
 #+begin_src emacs-lisp
-(defun gwb/latex-note ()
-  "Inserts my `note' template, and automatically turns on latex (auctex) mode"
-  (interactive)
-  (insert-file-contents-literally "~/.emacs.d/my-latex-templates/note.tex")
-  (latex-mode))
-
-;(global-set-key (kbd "C-c x n") 'my/latex-note)
+  (use-package gwb-hugo
+    :commands gwb-run-hugo-server) ;; allows to quickly start and kill hugo servers
 #+end_src
+
 
 
 Better Occur behavior
@@ -940,72 +1502,69 @@ to beginning of line"
 #+end_src
 
 
-Goes to beginning of match after matching
-
-#+begin_src emacs-lisp
-(defun gwb/goto-other-end ()
-  "If search forward, return to beginning of match. If search backward, do 
-nothing (already goes to beginning automatically"
-  (if (< isearch-other-end (point))
-      (goto-char isearch-other-end)))
-
-(defun gwb/isearch-exit ()
-  "Modifies the isearch-exit function to return to beginning of 
-word if succesful match"
-  (interactive)
-  (if (and search-nonincremental-instead
-	   (= 0 (length isearch-string)))
-      (let ((isearch-nonincremental t))
-	(isearch-edit-string)) ;; this calls isearch-done as well
-    (isearch-done))
-  (gwb/goto-other-end)
-  (isearch-clean-overlays))
-
-
-(add-hook 'isearch-mode-hook
-	  (lambda ()
-	    (define-key isearch-mode-map "\r"
-	      'gwb/isearch-exit)))
-
-#+end_src
-
-Flipping windows
-
-#+begin_src emacs-lisp
-(defun gwb/flip-windows ()
-  "flips the buffers in split-screen windows"
-  (interactive)
-  (unless (= 2 (count-windows))
-    (error "Only works with two windows."))
-  (let ((this-buffer (window-buffer (selected-window)))
-	(alt-buffer (window-buffer (previous-window))))
-    (set-window-buffer (previous-window) this-buffer)
-    (set-window-buffer (selected-window) alt-buffer)
-    (select-window (previous-window))))
-
-#+end_src
-
-Open README.org
-
-#+begin_src emacs-lisp
-(defun gwb/edit-config ()
-  "edits README.org"
-  (interactive)
-  (find-file "~/.emacs.d/README.org"))
-
-#+end_src
-
-Copy to osx
-
-#+begin_src emacs-lisp
-(defun gwb/copy-to-osx (start end)
-  (interactive "r")
-  (shell-command-on-region start end "pbcopy"))
-#+end_src
-
 Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps to s-SPC.
 
+* Custom keymap with extras
+
 #+begin_src emacs-lisp
+  (defun gwb/display-this-buffer-other-window ()
+    (interactive)
+    (switch-to-buffer-other-window (buffer-name)))
+
+  (defun gwb/mark-word-at-point ()
+    (interactive)
+    (let ((word (word-at-point t)))
+      (progn
+        (forward-word)
+        (backward-word)
+        (set-mark-command 'nil)
+        (search-forward word))))
+
+  (defun gwb/latex-note ()
+    "Inserts my `note' template, and automatically turns on latex (auctex) mode"
+    (interactive)
+    (insert-file-contents-literally "~/.emacs.default/my-latex-templates/note.tex")
+    (latex-mode))
+
+  (defun gwb/flip-windows ()
+    "flips the buffers in split-screen windows"
+    (interactive)
+    (unless (= 2 (count-windows))
+      (error "Only works with two windows."))
+    (let ((this-buffer (window-buffer (selected-window)))
+          (alt-buffer (window-buffer (previous-window))))
+      (set-window-buffer (previous-window) this-buffer)
+      (set-window-buffer (selected-window) alt-buffer)
+      (select-window (previous-window))))
+
+
+  (defun gwb/edit-config ()
+    "edits README.org"
+    (interactive)
+    (find-file "~/.emacs.default/README.org"))
+
+
+  (defun gwb/copy-to-osx (start end)
+    (interactive "r")
+    (shell-command-on-region start end "pbcopy"))
+
+  ;; For some reason, the ring bell function gets reactivated
+  ;; every time my laptop goes to sleep on mac os Big Sur... Need
+  ;; a shortcut to quickly set this.
+
+  (defun gwb-mute-alerts ()
+    (interactive)
+    (setq ring-bell-function 'ignore))
+
+  ;; custom function
+  (defun gwb/indent-org-block ()
+    (interactive)
+    (when (org-in-src-block-p)
+      (org-edit-special)
+      (indent-region (point-min) (point-max))
+      (org-edit-src-exit)))
+
+
   (defvar gwb-custom-keymap nil "my keymap..")
 
   (setq gwb-custom-keymap (make-sparse-keymap))
@@ -1017,5 +1576,10 @@ Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps
   (define-key gwb-custom-keymap (kbd "o") 'gwb/flip-windows)
   (define-key gwb-custom-keymap (kbd ".") 'gwb/edit-config)
   (define-key gwb-custom-keymap (kbd "w") 'gwb/copy-to-osx)
+  (define-key gwb-custom-keymap (kbd "<") 'gwb-mute-alerts)
   (define-key gwb-custom-keymap (kbd "TAB") 'gwb/indent-org-block)
+  (define-key gwb-custom-keymap (kbd "s") 'hydra-spotify/body)
+  (define-key gwb-custom-keymap (kbd "u") 'undo-tree-visualize)
+  (define-key gwb-custom-keymap (kbd "d") 'gwb/display-this-buffer-other-window)
 #+end_src
+
