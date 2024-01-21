@@ -18,6 +18,19 @@
     table)
   "Syntax table for `k-mode'.")
 
+(defvar k-mode--syntax-propertize
+  (syntax-propertize-rules
+   ("[^ ].\\(/\\)" (1 "."))))
+
+;; #006400 / green-dark
+;; #6e7b8b / blueish
+;; #2e8b57 
+(defface k-mode--font-lock-string-face
+  '((t :foreground "#2e8b57"))
+  "Face used for k-mode strings")       ; make string highlighting less aggressive
+
+(defvar-local k-mode--font-lock-string-face-coookie nil)
+
 (defvar k-mode--font-lock-defaults
   `((("[;]" . 'font-lock-warning-face)
      ("[()]" . 'font-lock-bracket-face)
@@ -27,14 +40,14 @@
      )
     nil nil nil))
 
-(defvar k-mode--syntax-propertize
-  (syntax-propertize-rules
-   ("[^ ].\\(/\\)" (1 "."))))
+
 
 (define-derived-mode k-mode prog-mode "K"
   "Major mode for editing K files"
   :syntax-table k-mode--syntax-table
   (setq-local font-lock-defaults k-mode--font-lock-defaults)
   (setq-local syntax-propertize-function k-mode--syntax-propertize)
+  (setq-local k-mode--font-lock-string-face-coookie
+              (face-remap-add-relative 'font-lock-string-face 'k-mode--font-lock-string-face))
   (font-lock-ensure)
   )
