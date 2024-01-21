@@ -55,6 +55,26 @@
     nil nil nil))
 
 
+;; eldoc
+(defvar k-mode--builtins-desc
+      '((?+ . "\
++x  flip   +(\"ab\";\"cd\") -> (\"ac\";\"bd\")\n\
+N+N add    1 2+3 -> 4 5")
+        (?- . "\
+-N  negate    - 1 2 -> -1 -2\n\
+N-N subtract  1-2 3 -> -1 -2")
+        (?* . "\
+*x  first      *`a`b -> `a   *(0 1;\"cd\") -> 0 1 \n\
+N*N multiply   1 2*3 4 -> 3 8")
+        (?% . "\
+%N sqrt      %25 -> 5.0   %-1 -> 0n \n\
+N%N divide   2 3%4 -> 0.5 0.75"))
+      )
+
+(defun k-mode--eldoc ()
+  (let ((c (char-after (point))))
+    (when-let ((docs (alist-get c k-mode--builtins-desc)))
+      docs)))
 
 (define-derived-mode k-mode prog-mode "K"
   "Major mode for editing K files"
@@ -63,5 +83,6 @@
   (setq-local syntax-propertize-function k-mode--syntax-propertize)
   (setq-local k-mode-string-face-coookie
               (face-remap-add-relative 'font-lock-string-face 'k-mode--string-face))
+  (setq-local eldoc-documentation-function #'k-mode--eldoc)
   (font-lock-ensure)
   )
