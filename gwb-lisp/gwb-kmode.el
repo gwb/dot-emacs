@@ -68,7 +68,27 @@ N-N subtract  1-2 3 -> -1 -2")
 N*N multiply   1 2*3 4 -> 3 8")
         (?% . "\
 %N sqrt      %25 -> 5.0   %-1 -> 0n \n\
-N%N divide   2 3%4 -> 0.5 0.75"))
+N%N divide   2 3%4 -> 0.5 0.75")
+        (?! . "\
+!i enum      !3 -> 0 1 2   !-3 -> -3 -2 -1 \n\
+!I odometer  !2 3 -> (0 0 0 1 1 1;0 1 2 0 1 2) \n\
+!d keys      !`a`b!0 1 -> `a`b \n\
+!S ns keys   a.b.c:1;a.b.d:2;!`a`b -> `c`d \n\
+x!y dict     `a`b!1 2 -> `a`b!1 2 \n\
+i!I div      -10!1234 567 -> 123 56 \n\
+i!I mod      10!1234 567 -> 4 7")
+        (?& . "\
+&I where     &3 -> 0 0 0   &1 0 1 4 2 -> 0 2 3 3 3 3 4 4 \n\
+&x deepwhere &(0 1 0;1 0 0;1 1 1) -> (0 1 2 2 2;1 0 0 1 2) \n\
+N&N min/and   2&-1 3 -> -1 2   0 0 1 1&0 1 0 1 -> 0 0 0 1")
+        (?| . "\
+|x reverse   |\"abc\" -> \"cba\"   |12 -> 12 \n\
+N|N max/or    2|-1 3 -> 2 3   0 0 1 1|0 1 0 1 -> 0 1 1 1")
+        (?< . "\
+<X ascend    <\"abacus\" -> 0 2 1 3 5 4 \n\
+<s open      fd:<`\"/path/to/file.txt\" \n\
+N<N less     0 2<1 -> 1 0")
+        )
       )
 
 (defun k-mode--eldoc ()
