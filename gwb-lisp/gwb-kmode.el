@@ -3,14 +3,6 @@
 
 (defvar k-mode--syntax-table
   (let ((table (make-syntax-table)))
-    ;; (modify-syntax-entry ?+ "." table)
-    ;; (modify-syntax-entry ?- "." table)
-    ;; (modify-syntax-entry ?* "." table)
-    ;; (modify-syntax-entry ?= "." table)
-    ;; (modify-syntax-entry ?\; "." table)
-    ;; (modify-syntax-entry ?: "." table)
-    ;; (modify-syntax-entry ?/ ". 2")
-    ;; (modify-syntax-entry ?\s "- 1")
     (dolist (s k-mode--verbs)
       (modify-syntax-entry s "." table))
     (modify-syntax-entry ?\/ "<" table)
@@ -18,43 +10,41 @@
     table)
   "Syntax table for `k-mode'.")
 
-;; ".[^ ]\\(/\\)"
 (defvar k-mode--syntax-propertize
   (syntax-propertize-rules
+   ;; Matches `/` if not at beginning of line *and* not preceded by space.
+   ;; `/` satisfying these conditions is an adverb _not_ a comment delimiter.
    ("[^ \n]\\(/\\)" (1 "."))))
 
-;; #006400 / green-dark
-;; #6e7b8b / blueish
-;; #2e8b57
-(defvar-local k-mode--font-lock-string-face-coookie nil)
-(defface k-mode--font-lock-string-face
-  '((t :foreground "#2e8b57"))
-  "Face used for k-mode strings")       ; make string highlighting less aggressive
-
-(defface k-mode--font-lock-regular
-  '((t :foreground "#000000"))
-  "Face used for k-mode strings")       ; make string highlighting less aggressive
+;; Font locking
+(defvar-local k-mode--font-lock-string-face-coookie
+    nil) ; just to save the value. See Prot's video about `face-remap-add-relative`
+(defface k-mode--font-lock-string-face '((t :foreground "#2e8b57"))
+  "Face for k-mode strings")            ; less aggressive than default
+(defface k-mode--font-lock-regular '((t :foreground "#000000"))
+  "Face k-mode `;` in parens")          ; black
 
 (defvar k-mode--font-lock-defaults
   `((
-     ("\\([a-zA-Z]+[a-zA-Z0-9]*\\) *:" . (1 font-lock-variable-name-face)) ; var assignment
-     ("[^a-zA-Z0-9]\\(x\\|y\\|z\\)[^a-zA-Z0-9]" . (1 font-lock-keyword-face)) ; x y z in {}
+     ;; variable assignment e.g. `a: +/ 1 2 3`
+     ("\\([a-zA-Z]+[a-zA-Z0-9]*\\) *:" . (1 font-lock-variable-name-face))
+     ;; x y z in {}
+     ("[^a-zA-Z0-9]\\(x\\|y\\|z\\)[^a-zA-Z0-9]" . (1 font-lock-keyword-face))
+     ;; Matches `;` inside lists e.g. (...;...;...;...). I don't want these coloured.
+     ;; This is achieved using "anchored" matches.
+     ;; See https://emacs.stackexchange.com/questions/12110/repeated-regex-capture-for-font-lock
      ("("
       ("[;]"
        ;; pre-match form
        (save-excursion
          (goto-char (match-end 0))
          (backward-char)
-         ;; (message (char-to-string (char-after)))
          (ignore-errors (forward-sexp))
-         ;; (message (char-to-string (char-after)))
          (point))
        ;; post-match form
        (goto-char (match-end 0))
        (0 'k-mode--font-lock-regular)))
      ("[;]" . 'font-lock-warning-face)
-     ;; ("[()]" . 'font-lock-bracket-face)
-     ;; ("[a-zA-Z]+[a-zA-Z0-9]*" . 'font-lock-variable-use-face) ; var use
      )
     nil nil nil))
 
