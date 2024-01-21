@@ -17,19 +17,25 @@
    ("[^ \n]\\(/\\)" (1 "."))))
 
 ;; Font locking
-(defvar-local k-mode--font-lock-string-face-coookie
+(defvar-local k-mode--string-face-coookie
     nil) ; just to save the value. See Prot's video about `face-remap-add-relative`
-(defface k-mode--font-lock-string-face '((t :foreground "#2e8b57"))
+(defface k-mode--string-face '((t :foreground "#2e8b57"))
   "Face for k-mode strings")            ; less aggressive than default
-(defface k-mode--font-lock-regular '((t :foreground "#000000"))
-  "Face k-mode `;` in parens")          ; black
+(defface k-mode--regular-face '((t :foreground "#000000"))
+  "Face for k-mode `;` in parens")          ; black
+(defface k-mode--var-assign-face '((t :foreground "#36648b"))
+  "Face for k-mode var assignment")
+(defface k-mode--expr-sep-face '((t :foreground "#ff3030"))
+  "Face for expression separator")
+(defface k-mode--xyz-face '((t :foreground "#c71585")) ;#942092
+  "Face for k-mode implicit x,y,x variables")
 
 (defvar k-mode--font-lock-defaults
   `((
      ;; variable assignment e.g. `a: +/ 1 2 3`
-     ("\\([a-zA-Z]+[a-zA-Z0-9]*\\) *:" . (1 font-lock-variable-name-face))
+     ("\\([a-zA-Z]+[a-zA-Z0-9]*\\) *:" . (1 'k-mode--var-assign-face))
      ;; x y z in {}
-     ("[^a-zA-Z0-9]\\(x\\|y\\|z\\)[^a-zA-Z0-9]" . (1 font-lock-keyword-face))
+     ("[^a-zA-Z0-9]\\(x\\|y\\|z\\)[^a-zA-Z0-9]" . (1 'k-mode--xyz-face))
      ;; Matches `;` inside lists e.g. (...;...;...;...). I don't want these coloured.
      ;; This is achieved using "anchored" matches.
      ;; See https://emacs.stackexchange.com/questions/12110/repeated-regex-capture-for-font-lock
@@ -43,8 +49,8 @@
          (point))
        ;; post-match form
        (goto-char (match-end 0))
-       (0 'k-mode--font-lock-regular)))
-     ("[;]" . 'font-lock-warning-face)
+       (0 'k-mode--regular-face)))
+     ("[;]" . 'k-mode--expr-sep-face)
      )
     nil nil nil))
 
@@ -55,7 +61,7 @@
   :syntax-table k-mode--syntax-table
   (setq-local font-lock-defaults k-mode--font-lock-defaults)
   (setq-local syntax-propertize-function k-mode--syntax-propertize)
-  (setq-local k-mode--font-lock-string-face-coookie
-              (face-remap-add-relative 'font-lock-string-face 'k-mode--font-lock-string-face))
+  (setq-local k-mode-string-face-coookie
+              (face-remap-add-relative 'font-lock-string-face 'k-mode--string-face))
   (font-lock-ensure)
   )
