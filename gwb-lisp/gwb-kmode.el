@@ -108,11 +108,38 @@ d,d merge     (`a`b!0 1),`b`c!2 3 -> `a`b`c!0 2 3")
 a^y fill      1^0 0N 2 3 0N -> 0 1 2 3 1   \"b\"^\" \" -> \"b\" \n\
 X^y without   \"abracadabra\"^\"bc\" -> \"araadara\"")
     (?# . "\
-#x  length    #\"abc\" -> 3   #4 -> 1   #`a`b`c!0 1 0 -> 3 \n\
+ #x length    #\"abc\" -> 3   #4 -> 1   #`a`b`c!0 1 0 -> 3 \n\
 i#y take      5#\"abc\" -> \"abcab\"   -5#`a`b`c -> `b`c`a`b`c \n\
 X#d take keys `c`d`f#`a`b`c`d!1 2 3 4 -> `c`d`f!3 4 0N \n\
 I#y reshape   2 3#` -> (```;```) \n\
 f#y replicate (3>#:')#(0;2 1 3;5 4) -> (0;5 4)   {2}#\"ab\" -> \"aabb\"")
+    (?_ . "\
+ _n floor     _12.34 -12.34 -> 12 -13 \n\
+ _c lowercase _\"Ab\" -> \"ab\" \n\
+i_Y drop      2_\"abcde\" -> \"cde\"   -2_`a`b`c -> ,`a \n\
+X_d drop keys `a`c_`a`b`c!0 1 2 -> (,`b)!,1 \n\
+I_Y cut       2 4 4_\"abcde\" -> (\"cd\";\"\";,\"e\") \n\
+f_Y weed out  (3>#:')_(0;2 1 3;5 4) -> ,2 1 3 \n\
+X_i delete    \"abcde\"_2 -> \"abde\"")
+    (?$ . "\
+ $x string    $(12;\"ab\";`cd;+) -> (\"12\";(,\"a\";,\"b\");\"cd\";,\"+\") \n\
+i$C pad       5$\"abc\" -> \"abc  \"   -3$\"a\" -> \"  a\" \n\
+s$y cast      `c$97 -> \"a\"   `i$-1.2 -> -1   `$\"a\" -> `a \n\
+s$y int       `I$\"-12\" -> -12")
+    (?? . "\
+ ?X  distinct  ?\"abacus\" -> \"abcus\" \n\
+ ?i  uniform   ?2 -> 0.6438163747387873 0.8852656305774402 /random \n\
+X?y  find      \"abcde\"?\"bfe\" -> 1 0N 4 \n\
+i?x  roll      3?1000 -> 11 398 293   1?0 -> ,-8164324247243690787 \n\
+i?x  deal      -3?1000 -> 11 398 293 /guaranteed distinct")
+    (?@ . "\
+ @x type      @1 -> `i   @\"ab\" -> `C   @() -> `A   @(@) -> `v \n\
+x@y apply(1)  {x+1}@2 -> 3   \"abc\"@1 -> \"b\"   (`a`b!0 1)@`b -> 1")
+    (?. . "
+ .S get       a:1;.`a -> 1   b.c:2;.`b`c -> 2 \n\
+ .C eval      .\"1+2\" -> 3 \n\
+ .d values    .`a`b!0 1 -> 0 1 \n\
+x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
     ))
 
 (defun k-mode--eldoc ()
