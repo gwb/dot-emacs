@@ -57,19 +57,19 @@
 
 ;; eldoc
 (defvar k-mode--builtins-desc
-      '((?+ . "\
+  '((?+ . "\
 +x  flip   +(\"ab\";\"cd\") -> (\"ac\";\"bd\")\n\
 N+N add    1 2+3 -> 4 5")
-        (?- . "\
+    (?- . "\
 -N  negate    - 1 2 -> -1 -2\n\
 N-N subtract  1-2 3 -> -1 -2")
-        (?* . "\
+    (?* . "\
 *x  first      *`a`b -> `a   *(0 1;\"cd\") -> 0 1 \n\
 N*N multiply   1 2*3 4 -> 3 8")
-        (?% . "\
+    (?% . "\
 %N sqrt      %25 -> 5.0   %-1 -> 0n \n\
 N%N divide   2 3%4 -> 0.5 0.75")
-        (?! . "\
+    (?! . "\
 !i enum      !3 -> 0 1 2   !-3 -> -3 -2 -1 \n\
 !I odometer  !2 3 -> (0 0 0 1 1 1;0 1 2 0 1 2) \n\
 !d keys      !`a`b!0 1 -> `a`b \n\
@@ -77,19 +77,43 @@ N%N divide   2 3%4 -> 0.5 0.75")
 x!y dict     `a`b!1 2 -> `a`b!1 2 \n\
 i!I div      -10!1234 567 -> 123 56 \n\
 i!I mod      10!1234 567 -> 4 7")
-        (?& . "\
-&I where     &3 -> 0 0 0   &1 0 1 4 2 -> 0 2 3 3 3 3 4 4 \n\
-&x deepwhere &(0 1 0;1 0 0;1 1 1) -> (0 1 2 2 2;1 0 0 1 2) \n\
+    (?& . "\
+&I  where     &3 -> 0 0 0   &1 0 1 4 2 -> 0 2 3 3 3 3 4 4 \n\
+&x  deepwhere &(0 1 0;1 0 0;1 1 1) -> (0 1 2 2 2;1 0 0 1 2) \n\
 N&N min/and   2&-1 3 -> -1 2   0 0 1 1&0 1 0 1 -> 0 0 0 1")
-        (?| . "\
-|x reverse   |\"abc\" -> \"cba\"   |12 -> 12 \n\
+    (?| . "\
+|x  reverse   |\"abc\" -> \"cba\"   |12 -> 12 \n\
 N|N max/or    2|-1 3 -> 2 3   0 0 1 1|0 1 0 1 -> 0 1 1 1")
-        (?< . "\
-<X ascend    <\"abacus\" -> 0 2 1 3 5 4 \n\
-<s open      fd:<`\"/path/to/file.txt\" \n\
+    (?< . "\
+<X  ascend    <\"abacus\" -> 0 2 1 3 5 4 \n\
+<s  open      fd:<`\"/path/to/file.txt\" \n\
 N<N less     0 2<1 -> 1 0")
-        )
-      )
+    (?> . "\
+>X  descend   >\"abacus\" -> 4 5 3 1 0 2 \n\
+>i  close     >fd \n\
+N>N more      0 1>0 2 -> 0 0")
+    (?= . "\
+=X group    =\"abracadabra\" -> \"abrcd\"!(0 3 5 7 10;1 8;2 9;,4;,6) \n\
+=i unitmat  =3 -> (1 0 0;0 1 0;0 0 1) \n\
+N=N equal   0 1 2=0 1 3 -> 1 1 0")
+    (?~ . "\
+~x  not       ~(0 2;``a;\"a \0\";::;{}) -> (1 0;1 0;0 0 1;1;0)
+x~y match     2 3~2 3 -> 1   \"4\"~4 -> 0   0~0.0 -> 0")
+    (?, . "\
+,x  enlist    ,0 -> ,0   ,0 1 -> ,0 1   ,`a!1 -> +(,`a)!,,1 \n\
+x,y concat    0,1 2 -> 0 1 2  \"a\",1 -> (\"a\";1) \n\
+d,d merge     (`a`b!0 1),`b`c!2 3 -> `a`b`c!0 2 3")
+    (?^ . "\
+^x  null      ^(\" a\";0 1 0N;``a;0.0 0n) -> (1 0;0 0 1;1 0;0 1) \n\
+a^y fill      1^0 0N 2 3 0N -> 0 1 2 3 1   \"b\"^\" \" -> \"b\" \n\
+X^y without   \"abracadabra\"^\"bc\" -> \"araadara\"")
+    (?# . "\
+#x  length    #\"abc\" -> 3   #4 -> 1   #`a`b`c!0 1 0 -> 3 \n\
+i#y take      5#\"abc\" -> \"abcab\"   -5#`a`b`c -> `b`c`a`b`c \n\
+X#d take keys `c`d`f#`a`b`c`d!1 2 3 4 -> `c`d`f!3 4 0N \n\
+I#y reshape   2 3#` -> (```;```) \n\
+f#y replicate (3>#:')#(0;2 1 3;5 4) -> (0;5 4)   {2}#\"ab\" -> \"aabb\"")
+    ))
 
 (defun k-mode--eldoc ()
   (let ((c (char-after (point))))
