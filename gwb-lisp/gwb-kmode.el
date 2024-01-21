@@ -24,19 +24,20 @@
 
 ;; #006400 / green-dark
 ;; #6e7b8b / blueish
-;; #2e8b57 
+;; #2e8b57
+(defvar-local k-mode--font-lock-string-face-coookie nil)
 (defface k-mode--font-lock-string-face
   '((t :foreground "#2e8b57"))
   "Face used for k-mode strings")       ; make string highlighting less aggressive
 
-(defvar-local k-mode--font-lock-string-face-coookie nil)
+
 
 (defvar k-mode--font-lock-defaults
   `((("[;]" . 'font-lock-warning-face)
      ("[()]" . 'font-lock-bracket-face)
      ("\\([a-zA-Z]+[a-zA-Z0-9]*\\) *:" . (1 font-lock-variable-name-face)) ; var assignment
      ("[^a-zA-Z0-9]\\(x\\|y\\|z\\)[^a-zA-Z0-9]" . (1 font-lock-keyword-face)) ; x y z in {}
-     ("[a-zA-Z]+[a-zA-Z0-9]*" . 'font-lock-variable-use-face) ; var assignment
+     ;; ("[a-zA-Z]+[a-zA-Z0-9]*" . 'font-lock-variable-use-face) ; var use
      )
     nil nil nil))
 
