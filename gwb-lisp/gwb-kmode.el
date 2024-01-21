@@ -18,9 +18,10 @@
     table)
   "Syntax table for `k-mode'.")
 
+;; ".[^ ]\\(/\\)"
 (defvar k-mode--syntax-propertize
   (syntax-propertize-rules
-   ("[^ ].\\(/\\)" (1 "."))))
+   ("[^ \n]\\(/\\)" (1 "."))))
 
 ;; #006400 / green-dark
 ;; #6e7b8b / blueish
@@ -30,13 +31,29 @@
   '((t :foreground "#2e8b57"))
   "Face used for k-mode strings")       ; make string highlighting less aggressive
 
-
+(defface k-mode--font-lock-regular
+  '((t :foreground "#000000"))
+  "Face used for k-mode strings")       ; make string highlighting less aggressive
 
 (defvar k-mode--font-lock-defaults
-  `((("[;]" . 'font-lock-warning-face)
-     ("[()]" . 'font-lock-bracket-face)
+  `((
      ("\\([a-zA-Z]+[a-zA-Z0-9]*\\) *:" . (1 font-lock-variable-name-face)) ; var assignment
      ("[^a-zA-Z0-9]\\(x\\|y\\|z\\)[^a-zA-Z0-9]" . (1 font-lock-keyword-face)) ; x y z in {}
+     ("("
+      ("[;]"
+       ;; pre-match form
+       (save-excursion
+         (goto-char (match-end 0))
+         (backward-char)
+         ;; (message (char-to-string (char-after)))
+         (ignore-errors (forward-sexp))
+         ;; (message (char-to-string (char-after)))
+         (point))
+       ;; post-match form
+       (goto-char (match-end 0))
+       (0 'k-mode--font-lock-regular)))
+     ("[;]" . 'font-lock-warning-face)
+     ;; ("[()]" . 'font-lock-bracket-face)
      ;; ("[a-zA-Z]+[a-zA-Z0-9]*" . 'font-lock-variable-use-face) ; var use
      )
     nil nil nil))
