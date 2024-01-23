@@ -1,3 +1,4 @@
+(require 's)
 
 (defvar k-mode--verbs (string-to-list "+-*<=>|#&^@._'$?!%:\\"))
 
@@ -56,6 +57,9 @@
 
 
 ;; eldoc
+;; TODO:
+;;   1. Adds @[], .[], ?[] to eldoc (see verbs in ngnk)
+;;   2. Adds adverbs (tougher because need look-ahead
 (defvar k-mode--builtins-desc
   '((?+ . "\
 +x  flip   +(\"ab\";\"cd\") -> (\"ac\";\"bd\")\n\
@@ -146,6 +150,45 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
   (let ((c (char-after (point))))
     (when-let ((docs (alist-get c k-mode--builtins-desc)))
       docs)))
+
+;; comint
+(defvar k-mode--repl-bin-path (or (executable-find "k") "k")
+  "Path to k executable")
+
+(defvar k-mode--repl-args
+  (when-let ((kpath (executable-find k-mode--repl-bin-path)))
+    (let ((replk (expand-file-name "repl.k" (file-name-directory kpath))))
+      (and (file-readable-p replk) (list replk))))
+  "Arguments to pass to binary")
+
+(defvar k-mode--repl-buffer-name "*ngn/k*"
+  "Name of repl buffer")
+(defvar k-mode--repl-prompt "^ "
+  "Prompt regex for repl")
+
+(defun k-mode--repl-buffer-proc nil
+  (get-buffer-process (get-buffer k-mode--repl-buffer-name)))
+
+(defun k-mode-run-k nil
+  (interactive)
+  (let ((repl-buffer (pop-to-buffer-same-window
+                      (get-buffer-create k-mode--repl-buffer-name))))
+    ;; apply is required here because `k-mode--repl-args` is a list
+    ;; (possibly singleton or empty), not a string.
+    (apply 'make-comint-in-buffer
+           k-mode--repl-buffer-name
+           repl-buffer
+           k-mode--repl-bin-path
+           nil
+           k-mode--repl-args)))
+
+(defun k-mode--send-region (point mark)
+  (interactive "^r")
+  (let ((s (s-concat
+            (s-replace "\n" "\a\n" (buffer-substring-no-properties point mark))
+            "\n")))
+    (message s)
+    (comint-send-string (k-mode--repl-buffer-proc) s)))
 
 (define-derived-mode k-mode prog-mode "K"
   "Major mode for editing K files"
