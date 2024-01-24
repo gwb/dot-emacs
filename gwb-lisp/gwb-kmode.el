@@ -180,7 +180,8 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
            repl-buffer
            k-mode--repl-bin-path
            nil
-           k-mode--repl-args)))
+           k-mode--repl-args)
+    (with-current-buffer repl-buffer (k-comint-mode))))
 
 (defun k-mode--send-region (point mark)
   (interactive "^r")
@@ -189,6 +190,16 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
             "\n")))
     (message s)
     (comint-send-string (k-mode--repl-buffer-proc) s)))
+
+
+(define-derived-mode k-comint-mode comint-mode "K interactive"
+  "Major mode for inferior K processes."
+  :syntax-table k-mode--syntax-table
+  (setq-local font-lock-defaults k-mode--font-lock-defaults)
+  (setq-local syntax-propertize-function k-mode--syntax-propertize)
+  (setq comint-process-echoes t)
+  (setq comint-prompt-read-only t)
+  )
 
 (define-derived-mode k-mode prog-mode "K"
   "Major mode for editing K files"
