@@ -189,9 +189,10 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
             (s-replace "\n" "\a\n" (buffer-substring-no-properties point mark))
             "\n")))
     (message s)
-    (comint-send-string (k-mode--repl-buffer-proc) s)))
+    (comint-send-string (k-mode--repl-buffer-proc) s))
+  (push-mark))
 
-
+;;;###autoload
 (define-derived-mode k-comint-mode comint-mode "K interactive"
   "Major mode for inferior K processes."
   :syntax-table k-mode--syntax-table
@@ -201,6 +202,13 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
   (setq comint-prompt-read-only t)
   )
 
+(defvar k-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-r") #'k-mode--send-region)
+    (set-keymap-parent map prog-mode-map)
+    map))
+
+;;;###autoload
 (define-derived-mode k-mode prog-mode "K"
   "Major mode for editing K files"
   :syntax-table k-mode--syntax-table
@@ -211,3 +219,6 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
   (setq-local eldoc-documentation-function #'k-mode--eldoc)
   (font-lock-ensure)
   )
+
+(provide 'k-mode)
+;;; k-mode.el ends here
