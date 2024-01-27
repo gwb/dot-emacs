@@ -157,17 +157,9 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
 
 (defvar k-mode--repl-args nil "Arguments to pass to binary")
 
-;; (defvar k-mode--repl-args
-;;   (when-let ((kpath (executable-find k-mode--repl-bin-path)))
-;;     (let ((replk (expand-file-name "repl.k" (file-name-directory kpath))))
-;;       (and (file-readable-p replk) (list replk))))
-;;   "Arguments to pass to binary")
+(defvar k-mode--repl-buffer-name "*ngn/k*" "Name of repl buffer")
 
-(defvar k-mode--repl-buffer-name "*ngn/k*"
-  "Name of repl buffer")
-
-(defvar k-mode--repl-prompt "^ "
-  "Prompt regex for repl")
+(defvar k-mode--repl-prompt "^ " "Prompt regex for repl")
 
 (defun k-mode--get-repl-args ()
   (or k-mode--repl-args
@@ -202,6 +194,9 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
     (comint-send-string (k-mode--repl-buffer-proc) s))
   (push-mark))
 
+(defun k-mode--send-line ()
+  (interactive)
+  (k-mode--send-region (line-beginning-position) (line-end-position)))
 
 (define-derived-mode k-comint-mode comint-mode "K interactive"
   "Major mode for inferior K processes."
@@ -215,6 +210,7 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
 (defvar k-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-r") #'k-mode--send-region)
+    (define-key map (kbd "C-c C-c") #'k-mode--send-line)
     (set-keymap-parent map prog-mode-map)
     map))
 
