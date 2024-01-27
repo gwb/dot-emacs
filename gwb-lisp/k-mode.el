@@ -208,7 +208,11 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
 (defun k-mode--send-dwim ()
   (interactive)
   (unless (comint-check-proc k-mode-repl-buffer-name)
-    (save-excursion (k-mode-run-k)))
+    (save-excursion
+      (k-mode-run-k)
+      ;; sleep - otherwise when chatty mode is on, may insert command before the
+      ;; ngn/k banner, which is upsettingly ugly.
+      (sleep-for 1)))
   (let ((send-region-fn (if k-mode-repl-chatty #'k-mode--send-region-chatty #'k-mode-send-region)))
     (if (use-region-p)
         (progn
