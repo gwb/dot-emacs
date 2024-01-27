@@ -207,11 +207,12 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
   (interactive)
   (unless (comint-check-proc k-mode--repl-buffer-name)
     (save-excursion (k-mode-run-k)))
-  (if (use-region-p)
-      (progn
-        (k-mode--send-region (region-beginning) (region-end))
-        (deactivate-mark))
-    (k-mode--send-region (line-beginning-position) (line-end-position))))
+  (let ((send-region-fn (if k-mode--repl-chatty #'k-mode--send-region-chatty #'k-mode-send-region)))
+    (if (use-region-p)
+        (progn
+          (funcall send-region-fn (region-beginning) (region-end))
+          (deactivate-mark))
+      (funcall send-region-fn (line-beginning-position) (line-end-position)))))
 
 (defun k-mode--send-region (point mark)
   (interactive "^r")
