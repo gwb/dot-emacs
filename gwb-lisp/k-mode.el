@@ -1,5 +1,13 @@
 (require 's)
 
+;; Configuration variable
+(defvar k-mode--repl-bin-path (or (executable-find "k") "k") "Path to k executable")
+(defvar k-mode--repl-args nil "Arguments to pass to binary")
+(defvar k-mode--repl-buffer-name "*ngn/k*" "Name of repl buffer")
+(defvar k-mode--repl-prompt "^ " "Prompt regex for repl")
+(defvar k-mode--repl-chatty t "Whether to insert the commands sent via `send-dwim` in repl")
+
+;; k-mode
 (defvar k-mode--verbs (string-to-list "+-*<=>|#&^@._'$?!%:\\"))
 
 (defvar k-mode--syntax-table
@@ -151,15 +159,25 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
     (when-let ((docs (alist-get c k-mode--builtins-desc)))
       docs)))
 
+(defvar k-mode-map
+  (let ((map (make-sparse-keymap)))
+    ;; (define-key map (kbd "C-c C-r") #'k-mode--send-region)
+    (define-key map (kbd "C-c C-c") #'k-mode--send-dwim)
+    (set-keymap-parent map prog-mode-map)
+    map))
+
+(define-derived-mode k-mode prog-mode "K"
+  "Major mode for editing K files"
+  :syntax-table k-mode--syntax-table
+  (setq-local font-lock-defaults k-mode--font-lock-defaults)
+  (setq-local syntax-propertize-function k-mode--syntax-propertize)
+  (setq-local k-mode-string-face-coookie
+              (face-remap-add-relative 'font-lock-string-face 'k-mode--string-face))
+  (setq-local eldoc-documentation-function #'k-mode--eldoc)
+  (font-lock-ensure)
+  )
+
 ;; comint
-(defvar k-mode--repl-bin-path (or (executable-find "k") "k")
-  "Path to k executable")
-
-(defvar k-mode--repl-args nil "Arguments to pass to binary")
-(defvar k-mode--repl-buffer-name "*ngn/k*" "Name of repl buffer")
-(defvar k-mode--repl-prompt "^ " "Prompt regex for repl")
-(defvar k-mode--repl-chatty t "Whether to insert the commands sent via `send-dwim` in repl")
-
 (defun k-mode--get-repl-args ()
   (or k-mode--repl-args
       (when-let ((kpath (executable-find k-mode--repl-bin-path)))
@@ -168,21 +186,6 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
 
 (defun k-mode--repl-buffer-proc ()
   (get-buffer-process (get-buffer k-mode--repl-buffer-name)))
-
-;; (defun k-mode-run-k nil
-;;   (interactive)
-;;   (let ((repl-buffer (pop-to-buffer-same-window
-;;                       (get-buffer-create k-mode--repl-buffer-name)))
-;;         (repl-args (k-mode--get-repl-args)))
-;;     ;; apply is required here because `k-mode--repl-args` is a list
-;;     ;; (possibly singleton or empty), not a string.
-;;     (apply 'make-comint-in-buffer
-;;            k-mode--repl-buffer-name
-;;            repl-buffer
-;;            k-mode--repl-bin-path
-;;            nil
-;;            repl-args)
-;;     (with-current-buffer repl-buffer (k-comint-mode))))
 
 (defun k-mode-run-k ()
   (interactive)
@@ -243,23 +246,6 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
   (setq comint-prompt-read-only t)
   )
 
-(defvar k-mode-map
-  (let ((map (make-sparse-keymap)))
-    ;; (define-key map (kbd "C-c C-r") #'k-mode--send-region)
-    (define-key map (kbd "C-c C-c") #'k-mode--send-dwim)
-    (set-keymap-parent map prog-mode-map)
-    map))
-
-(define-derived-mode k-mode prog-mode "K"
-  "Major mode for editing K files"
-  :syntax-table k-mode--syntax-table
-  (setq-local font-lock-defaults k-mode--font-lock-defaults)
-  (setq-local syntax-propertize-function k-mode--syntax-propertize)
-  (setq-local k-mode-string-face-coookie
-              (face-remap-add-relative 'font-lock-string-face 'k-mode--string-face))
-  (setq-local eldoc-documentation-function #'k-mode--eldoc)
-  (font-lock-ensure)
-  )
 
 (provide 'k-mode)
 ;;; k-mode.el ends here
