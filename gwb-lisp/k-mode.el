@@ -1,11 +1,10 @@
 (require 's)
 
 ;; Configuration variable
-(defvar k-mode--repl-bin-path (or (executable-find "k") "k") "Path to k executable")
-(defvar k-mode--repl-args nil "Arguments to pass to binary")
-(defvar k-mode--repl-buffer-name "*ngn/k*" "Name of repl buffer")
-(defvar k-mode--repl-prompt "^ " "Prompt regex for repl")
-(defvar k-mode--repl-chatty t "Whether to insert the commands sent via `send-dwim` in repl")
+(defcustom k-mode-repl-bin-path (or (executable-find "k") "k") "Path to k executable")
+(defcustom k-mode-repl-args nil "Arguments to pass to binary")
+(defcustom k-mode-repl-buffer-name "*ngn/k*" "Name of repl buffer")
+(defcustom k-mode-repl-chatty t "Whether to insert the commands sent via `send-dwim` in repl")
 
 ;; k-mode
 (defvar k-mode--verbs (string-to-list "+-*<=>|#&^@._'$?!%:\\"))
@@ -179,25 +178,25 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
 
 ;; comint
 (defun k-mode--get-repl-args ()
-  (or k-mode--repl-args
-      (when-let ((kpath (executable-find k-mode--repl-bin-path)))
+  (or k-mode-repl-args
+      (when-let ((kpath (executable-find k-mode-repl-bin-path)))
         (let ((replk (expand-file-name "repl.k" (file-name-directory kpath))))
           (and (file-readable-p replk) (list replk))))))
 
 (defun k-mode--repl-buffer-proc ()
-  (get-buffer-process (get-buffer k-mode--repl-buffer-name)))
+  (get-buffer-process (get-buffer k-mode-repl-buffer-name)))
 
 (defun k-mode-run-k ()
   (interactive)
-  (let ((repl-buffer (get-buffer-create k-mode--repl-buffer-name))
+  (let ((repl-buffer (get-buffer-create k-mode-repl-buffer-name))
         (repl-args (k-mode--get-repl-args)))
     (with-current-buffer repl-buffer
-      ;; apply is required here because `k-mode--repl-args` is a list
+      ;; apply is required here because `k-mode-repl-args` is a list
       ;; (possibly singleton or empty), not a string.      
       (apply 'make-comint-in-buffer
-             k-mode--repl-buffer-name
+             k-mode-repl-buffer-name
              (current-buffer)
-             k-mode--repl-bin-path
+             k-mode-repl-bin-path
              nil
              repl-args)
       (k-comint-mode))
@@ -208,9 +207,9 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
 
 (defun k-mode--send-dwim ()
   (interactive)
-  (unless (comint-check-proc k-mode--repl-buffer-name)
+  (unless (comint-check-proc k-mode-repl-buffer-name)
     (save-excursion (k-mode-run-k)))
-  (let ((send-region-fn (if k-mode--repl-chatty #'k-mode--send-region-chatty #'k-mode-send-region)))
+  (let ((send-region-fn (if k-mode-repl-chatty #'k-mode--send-region-chatty #'k-mode-send-region)))
     (if (use-region-p)
         (progn
           (funcall send-region-fn (region-beginning) (region-end))
@@ -231,7 +230,7 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
         (s (s-concat
             (s-replace "\n" "\a\n" (buffer-substring-no-properties point mark))
             "\n")))
-    (with-current-buffer (get-buffer-create k-mode--repl-buffer-name)
+    (with-current-buffer (get-buffer-create k-mode-repl-buffer-name)
       (comint-goto-process-mark)
       (insert (s-concat rs "\n"))
       (comint-set-process-mark)

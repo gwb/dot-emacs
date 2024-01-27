@@ -980,7 +980,8 @@ I have played around, at some point or another, with many programming languages.
   (use-package k-mode
     :mode "\\.k\\'"
     :commands (k-mode-run-k)
-    :config (setq k-mode--repl-bin-path "/Users/gwb/Hacks/repos/k/k")
+    :custom
+    (k-mode-repl-bin-path "/Users/gwb/Hacks/repos/k/k")
     )
 #+end_src
 
