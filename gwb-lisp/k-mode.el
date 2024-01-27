@@ -173,6 +173,7 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
   (setq-local k-mode-string-face-coookie
               (face-remap-add-relative 'font-lock-string-face 'k-mode--string-face))
   (setq-local eldoc-documentation-function #'k-mode--eldoc)
+  (setq-local comment-start "/")
   (font-lock-ensure)
   )
 
