@@ -156,10 +156,9 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
   "Path to k executable")
 
 (defvar k-mode--repl-args nil "Arguments to pass to binary")
-
 (defvar k-mode--repl-buffer-name "*ngn/k*" "Name of repl buffer")
-
 (defvar k-mode--repl-prompt "^ " "Prompt regex for repl")
+(defvar k-mode--repl-chatty t "Whether to insert the commands sent via `send-dwim` in repl")
 
 (defun k-mode--get-repl-args ()
   (or k-mode--repl-args
@@ -170,20 +169,49 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
 (defun k-mode--repl-buffer-proc ()
   (get-buffer-process (get-buffer k-mode--repl-buffer-name)))
 
-(defun k-mode-run-k nil
+;; (defun k-mode-run-k nil
+;;   (interactive)
+;;   (let ((repl-buffer (pop-to-buffer-same-window
+;;                       (get-buffer-create k-mode--repl-buffer-name)))
+;;         (repl-args (k-mode--get-repl-args)))
+;;     ;; apply is required here because `k-mode--repl-args` is a list
+;;     ;; (possibly singleton or empty), not a string.
+;;     (apply 'make-comint-in-buffer
+;;            k-mode--repl-buffer-name
+;;            repl-buffer
+;;            k-mode--repl-bin-path
+;;            nil
+;;            repl-args)
+;;     (with-current-buffer repl-buffer (k-comint-mode))))
+
+(defun k-mode-run-k ()
   (interactive)
-  (let ((repl-buffer (pop-to-buffer-same-window
-                      (get-buffer-create k-mode--repl-buffer-name)))
+  (let ((repl-buffer (get-buffer-create k-mode--repl-buffer-name))
         (repl-args (k-mode--get-repl-args)))
-    ;; apply is required here because `k-mode--repl-args` is a list
-    ;; (possibly singleton or empty), not a string.
-    (apply 'make-comint-in-buffer
-           k-mode--repl-buffer-name
-           repl-buffer
-           k-mode--repl-bin-path
-           nil
-           repl-args)
-    (with-current-buffer repl-buffer (k-comint-mode))))
+    (with-current-buffer repl-buffer
+      ;; apply is required here because `k-mode--repl-args` is a list
+      ;; (possibly singleton or empty), not a string.      
+      (apply 'make-comint-in-buffer
+             k-mode--repl-buffer-name
+             (current-buffer)
+             k-mode--repl-bin-path
+             nil
+             repl-args)
+      (k-comint-mode))
+    (if (eq major-mode #'k-mode)
+        (display-buffer repl-buffer)
+      (pop-to-buffer-same-window repl-buffer))
+    ))
+
+(defun k-mode--send-dwim ()
+  (interactive)
+  (unless (comint-check-proc k-mode--repl-buffer-name)
+    (save-excursion (k-mode-run-k)))
+  (if (use-region-p)
+      (progn
+        (k-mode--send-region (region-beginning) (region-end))
+        (deactivate-mark))
+    (k-mode--send-region (line-beginning-position) (line-end-position))))
 
 (defun k-mode--send-region (point mark)
   (interactive "^r")
@@ -191,12 +219,19 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
             (s-replace "\n" "\a\n" (buffer-substring-no-properties point mark))
             "\n")))
     (message s)
-    (comint-send-string (k-mode--repl-buffer-proc) s))
-  (push-mark))
+    (comint-send-string (k-mode--repl-buffer-proc) s)))
 
-(defun k-mode--send-line ()
-  (interactive)
-  (k-mode--send-region (line-beginning-position) (line-end-position)))
+(defun k-mode--send-region-chatty (point mark)
+  (interactive "^r")
+  (let ((rs (buffer-substring-no-properties point mark))
+        (s (s-concat
+            (s-replace "\n" "\a\n" (buffer-substring-no-properties point mark))
+            "\n")))
+    (with-current-buffer (get-buffer-create k-mode--repl-buffer-name)
+      (comint-goto-process-mark)
+      (insert (s-concat rs "\n"))
+      (comint-set-process-mark)
+      (comint-send-string nil s))))
 
 (define-derived-mode k-comint-mode comint-mode "K interactive"
   "Major mode for inferior K processes."
@@ -209,8 +244,8 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
 
 (defvar k-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c C-r") #'k-mode--send-region)
-    (define-key map (kbd "C-c C-c") #'k-mode--send-line)
+    ;; (define-key map (kbd "C-c C-r") #'k-mode--send-region)
+    (define-key map (kbd "C-c C-c") #'k-mode--send-dwim)
     (set-keymap-parent map prog-mode-map)
     map))
 
