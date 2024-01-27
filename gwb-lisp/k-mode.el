@@ -155,24 +155,34 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
 (defvar k-mode--repl-bin-path (or (executable-find "k") "k")
   "Path to k executable")
 
-(defvar k-mode--repl-args
-  (when-let ((kpath (executable-find k-mode--repl-bin-path)))
-    (let ((replk (expand-file-name "repl.k" (file-name-directory kpath))))
-      (and (file-readable-p replk) (list replk))))
-  "Arguments to pass to binary")
+(defvar k-mode--repl-args nil "Arguments to pass to binary")
+
+;; (defvar k-mode--repl-args
+;;   (when-let ((kpath (executable-find k-mode--repl-bin-path)))
+;;     (let ((replk (expand-file-name "repl.k" (file-name-directory kpath))))
+;;       (and (file-readable-p replk) (list replk))))
+;;   "Arguments to pass to binary")
 
 (defvar k-mode--repl-buffer-name "*ngn/k*"
   "Name of repl buffer")
+
 (defvar k-mode--repl-prompt "^ "
   "Prompt regex for repl")
 
-(defun k-mode--repl-buffer-proc nil
+(defun k-mode--get-repl-args ()
+  (or k-mode--repl-args
+      (when-let ((kpath (executable-find k-mode--repl-bin-path)))
+        (let ((replk (expand-file-name "repl.k" (file-name-directory kpath))))
+          (and (file-readable-p replk) (list replk))))))
+
+(defun k-mode--repl-buffer-proc ()
   (get-buffer-process (get-buffer k-mode--repl-buffer-name)))
 
 (defun k-mode-run-k nil
   (interactive)
   (let ((repl-buffer (pop-to-buffer-same-window
-                      (get-buffer-create k-mode--repl-buffer-name))))
+                      (get-buffer-create k-mode--repl-buffer-name)))
+        (repl-args (k-mode--get-repl-args)))
     ;; apply is required here because `k-mode--repl-args` is a list
     ;; (possibly singleton or empty), not a string.
     (apply 'make-comint-in-buffer
@@ -180,7 +190,7 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
            repl-buffer
            k-mode--repl-bin-path
            nil
-           k-mode--repl-args)
+           repl-args)
     (with-current-buffer repl-buffer (k-comint-mode))))
 
 (defun k-mode--send-region (point mark)
@@ -192,7 +202,7 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
     (comint-send-string (k-mode--repl-buffer-proc) s))
   (push-mark))
 
-;;;###autoload
+
 (define-derived-mode k-comint-mode comint-mode "K interactive"
   "Major mode for inferior K processes."
   :syntax-table k-mode--syntax-table
@@ -208,7 +218,6 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
     (set-keymap-parent map prog-mode-map)
     map))
 
-;;;###autoload
 (define-derived-mode k-mode prog-mode "K"
   "Major mode for editing K files"
   :syntax-table k-mode--syntax-table

@@ -975,14 +975,19 @@ I have played around, at some point or another, with many programming languages.
   ;;   (gwb-amend-bqn-comint-mode))
 #+end_src
 
-** 
+** K
 #+begin_src emacs-lisp
-  (use-package ngnk-cli
-    :mode "\\.k\\'"
-    :config (setq ngnk-cli-file-path "/Users/gwb/Hacks/repos/k/k")
-    :bind (:map ngnk-cli-map ("C-c C-r" . ngnk-send-region)
-                             ("C-c C-c" . ngnk-send-line-at-point))
+  ;; (use-package ngnk-cli
+  ;;   :mode "\\.k\\'"
+  ;;   :config (setq ngnk-cli-file-path "/Users/gwb/Hacks/repos/k/k")
+  ;;   :bind (:map ngnk-cli-map ("C-c C-r" . ngnk-send-region)
+  ;;                            ("C-c C-c" . ngnk-send-line-at-point))
 
+  ;;   )
+
+  (use-package k-mode
+    :mode "\\.k\\'"
+    :config (setq k-mode--repl-bin-path "/Users/gwb/Hacks/repos/k/k")
     )
 #+end_src
 
