@@ -20,9 +20,17 @@
 
 (defvar k-mode--syntax-propertize
   (syntax-propertize-rules
+   ;; The two rules below define multiline comments. In K, a multiline comment is
+   ;; open by a line containing only "/" and closed by a line containing only "\".
+   ;; Since we've already used / and \n to open and close single line comments, we
+   ;; leverage emacs' support for "backup" comments, using the "b" syntax flag, see
+   ;; here: https://www.gnu.org/software/emacs/manual/html_node/elisp/Syntax-Flags.html
+   ("^\\(/\\)$" (1 "< b"))
+   ("^\\(\\\\\\)$" (1 "> b"))
    ;; Matches `/` if not at beginning of line *and* not preceded by space.
-   ;; `/` satisfying these conditions is an adverb _not_ a comment delimiter.
-   ("[^ \n]\\(/\\)" (1 "."))))
+   ;; `/` satisfying these conditions is an adverb (".") _not_ a comment delimiter ("<") .
+   ("[^ \n]\\(/\\)" (1 "."))
+   ))
 
 ;; Font locking
 (defvar-local k-mode--string-face-coookie
