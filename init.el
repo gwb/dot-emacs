@@ -21,6 +21,7 @@
 	     '("org" . "https://orgmode.org/elpa/") t)
 
 
+(add-to-list 'load-path (thread-last user-emacs-directory (expand-file-name "copied-lisp")))
 (add-to-list 'load-path (thread-last user-emacs-directory (expand-file-name "gwb-lisp")))
 (let ((default-directory (thread-last user-emacs-directory (expand-file-name "gwb-lisp"))))
   (normal-top-level-add-subdirs-to-load-path))
