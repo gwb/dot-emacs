@@ -40,17 +40,6 @@ There are a number of small irritants that need to be fixed:
 
 #+END_SRC
 
-** Defer loading some libraries
-#+begin_src emacs-lisp
-  (use-package dash :defer t)
-  (use-package elisp-refs :defer t)
-  (use-package f :defer t)
-  (use-package ht :defer t)
-  (use-package s :defer t)
-
-
-
-#+end_src
 ** Re-enable disabled commands
 
 #+begin_src emacs-lisp
