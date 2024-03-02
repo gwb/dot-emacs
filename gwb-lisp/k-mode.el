@@ -170,6 +170,7 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
   (let ((map (make-sparse-keymap)))
     ;; (define-key map (kbd "C-c C-r") #'k-mode--send-region)
     (define-key map (kbd "C-c C-c") #'k-mode--send-dwim)
+    (define-key map (kbd "C-c C-m") #'k-mode--select-block-dwim)
     (set-keymap-parent map prog-mode-map)
     map))
 
@@ -228,6 +229,19 @@ x.y apply(n)  {x*y+1}. 2 3 -> 8   (`a`b`c;`d`e`f). 1 0 -> `d")
           (funcall send-region-fn (region-beginning) (region-end))
           (deactivate-mark))
       (funcall send-region-fn (line-beginning-position) (line-end-position)))))
+
+(defun k-mode--select-block-dwim ()
+  (interactive)
+  (let* ((beg (re-search-backward "^[a-zA-Z]"))
+         (end (save-excursion
+                (goto-char beg)
+                (let ((sep (char-after (search-forward ":"))))
+                  (if (or (= ?\( sep) (= ?\{ sep))
+                      (progn (forward-sexp) (point))
+                    (error "Expected ( or {"))))))
+    (set-mark beg)
+    (goto-char end)))
+
 
 (defun k-mode--send-region (point mark)
   (interactive "^r")
