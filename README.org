@@ -4,130 +4,44 @@ There are a number of small irritants that need to be fixed:
 
 [x] Fix orderless so it does case-insensitive and regexp matches.
 
-* Emacs 28 fixes
-
+* Basics
+** Emacs 28 fixes
 #+begin_src emacs-lisp
   (use-package gwb-fix-obsolescence
     :demand t)
 #+end_src
-
-* Interface tweaks
-** Remove frills from interface + some customizations
+** Better defaults
    
 #+BEGIN_SRC emacs-lisp
-  ;; (tool-bar-mode -1)
-  ;; (menu-bar-mode -1)
+  (setq ring-bell-function 'ignore)
   (fset 'yes-or-no-p 'y-or-n-p)
-  ;; (scroll-bar-mode -1)
-  ;; (setq inhibit-startup-screen t)
+  (show-paren-mode)
   (set-fill-column 80)
   (setq column-number-mode t)
-  (setq ring-bell-function 'ignore)
-  (setq initial-major-mode 'fundamental-mode)
-#+END_SRC
-
-** Some better defaults
-
-#+BEGIN_SRC emacs-lisp
   (setq-default indent-tabs-mode nil)
-  (set-fill-column 80)
   (setq uniquify-buffer-name-style 'forward)
-  (show-paren-mode)
+  (setq eshell-cmpl-ignore-case t) ;; ignore case when completing filename
+  (setq initial-major-mode 'fundamental-mode) ; Scratch buffer default mode => faster load
   (global-set-key (kbd "C-x C-b") 'ibuffer)
   (global-set-key (kbd "M-<down>") 'scroll-other-window)
   (global-set-key (kbd "M-<up>") 'scroll-other-window-down)
-  (setq eshell-cmpl-ignore-case t) ;; ignore case when completing filename
-
+  (setq disabled-command-function nil)    ; re-enable disabled commands
 #+END_SRC
 
-** Re-enable disabled commands
-
+Make sure emacs treats everything as unicode by default.
 #+begin_src emacs-lisp
-  (setq disabled-command-function nil)
-  ;(put 'narrow-to-region 'disabled nil)
+  (set-language-environment "utf-8")
 #+end_src
 
-** Theming and fonts
-Most frequently used themes are:
-+ 'monokai (works both on GUI and Terminal)
-+ 'snazzy (works well only on GUI)
-+ 'zenburn
-
-  To switch themes during usage: M-X counsel-load-theme
-
-    
+Fix osx issue when using dired.
 #+begin_src emacs-lisp
-  (defun gwb/after-frame-set-face (frame)
-    (if (display-graphic-p frame)
-	(progn
-	  (message "Faces were set for default, fixed and variable pitch for this frame")
-	  (set-face-attribute 'default frame :font "Fira Code Retina" :height 120)
-	  (set-face-attribute 'fixed-pitch frame :font "Fira Code Retina" :height 120)
-	  (set-face-attribute 'variable-pitch frame :font "Cantarell" :height 130 :weight 'regular))))
-
-  ;; When started with a daemon, no frame is created so need to add hook for when frame is created
-  (add-hook 'after-make-frame-functions 'gwb/after-frame-set-face)
-
-  ;; When created without a daemon, frame is actually created before the above hook is setup, so wouldn't work
-  ;; instead, need to apply function to existing frames
-(mapc 'gwb/after-frame-set-face (frame-list))
-
-#+end_src
-
-
-#+BEGIN_SRC emacs-lisp
-  ;(use-package monokai-theme :ensure t)
-  ;(load-theme 'monokai t)
-
-  (use-package doom-themes
-    ;:init (load-theme 'doom-monokai-classic t)
-    ;;:init (load-theme 'doom-snazzy t)
-    :init (load-theme 'doom-tomorrow-day t)
-    :config
-    (doom-themes-org-config))
-
-  ;(load-theme 'sanityinc-tomorrow-day)
-#+END_SRC
-
-You must run (all-the-icons-install-fonts) one time after
-installing this package!
-
-#+begin_src emacs-lisp
-;;(use-package all-the-icons)
-#+end_src
-
-Icons for the doom-modeline has to be set after frame is created, otherwise they won't be
-shown when emacs is started in daemon-mode (same problem as set-face-attribute)
-
-#+begin_src emacs-lisp
-  (defun gwb/after-frame-modeline (frame)
-    (if (display-graphic-p frame)
-        (progn
-          (message "Set icons for doom modeline")
-            ;; (setq doom-modeline-icon (display-graphic-p))
-            ;; (setq doom-modeline-icon t)
-          (setq doom-modeline-major-mode-icon t)
-          (setq doom-modeline-major-mode-color-icon t))))
-
-  (use-package doom-modeline
-    :disabled t
-    :ensure t
-    :init (doom-modeline-mode 1)
-    :config
-    (setq doom-modeline-height 15)
-    (set-face-attribute 'mode-line nil :background "#323232")
-    (set-face-attribute 'mode-line-inactive nil :background "#282828")
-    (set-face-attribute 'mode-line-inactive nil :foreground "#464646")
-    ;; (add-hook 'after-make-frame-functions 'gwb/after-frame-modeline)
-    ;(mapc 'gwb/after-frame-modeline (frame-list))
-    )
-
-
+  (when (string= system-type "darwin")       
+    (setq dired-use-ls-dired nil))
 #+end_src
 
 ** Mouse operations for terminal
 
-Note: try to prune this down? Is all of this needed?
+This is useful only in the terminal -- not the GUI
 
 #+BEGIN_SRC emacs-lisp
 (xterm-mouse-mode t)
@@ -142,29 +56,6 @@ Note: try to prune this down? Is all of this needed?
 (define-key global-map [mouse-4] (wheel-scroll-down))
 (define-key global-map [C-mouse-5] (wheel-scroll-pgup))
 (define-key global-map [C-mouse-4] (wheel-scroll-pgdown))
-#+END_SRC
-
-** Special unicode input
-+ Investigate: (set-default-coding-systems 'utf-8) 
-#+BEGIN_SRC emacs-lisp
-(set-language-environment "utf-8")
-#+END_SRC
-
-The following is David's special unicode input mode:
-
-#+BEGIN_SRC emacs-lisp
-;; (add-to-list 'load-path "~/.emacs.d/inputs")
-;;(add-to-list 'load-path (thread-last user-emacs-directory (expand-file-name "inputs")))
-;;(require 'darais-input)
-#+END_SRC
-
-** Fixing basic osx related issues 
-
-Removes error when using dired
-
-#+BEGIN_SRC emacs-lisp
-(when (string= system-type "darwin")       
-  (setq dired-use-ls-dired nil))
 #+END_SRC
 
 ** Loads customization file
@@ -182,23 +73,47 @@ and loads it.
     (load custom-file))
 #+END_SRC
 
-* Outlines
-This is messes up with R -- I redefined the outline section below.
+* Theming and fonts
+** Fonts and faces
+For fonts and faces, we need to deal with two cases:
+- when emacs is started with a daemon
+- when emacs is started without a daemon
+Depending on which it is, the frame will be created at different times, so we need to
+apply modifications at different times. 
+
+First we define the attributes to be applied
 #+begin_src emacs-lisp
-  ;; (use-package outline
-  ;; ;;:init
-  ;; ;;(defvar gwb-outline-minor-mode-map (make-sparse-keymap))
-  ;; :bind
-  ;; (:map outline-minor-mode-map
-  ;;       ("M-n" . 'outline-next-visible-heading)
-  ;;       ("M-p" . 'outline-previous-visible-heading)
-  ;;       ("C-c C-q" . 'hide-body)
-  ;;       ("C-c C-o" . 'hide-other)
-  ;;       ("C-c C-c" . 'hide-entry)
-  ;;       ("C-c C-a" . 'show-all)
-  ;;       ("C-c C-e" . 'outline-show-entry)
-  ;;       ("C-c C-k" . 'show-branches)))
+  (defun gwb/after-frame-set-face (frame)
+    (when (display-graphic-p frame)
+      (message "Faces were set for default, fixed and variable pitch for this frame")
+      (set-face-attribute 'default frame :font "Fira Code Retina" :height 120)
+      (set-face-attribute 'fixed-pitch frame :font "Fira Code Retina" :height 120)
+      (set-face-attribute 'variable-pitch frame :font "Cantarell" :height 130 :weight 'regular)))
 #+end_src
+
+When started with a daemon, no frame is created so need to add hook for when frame is created.
+#+begin_src emacs-lisp
+  (add-hook 'after-make-frame-functions 'gwb/after-frame-set-face)
+#+end_src
+
+When created without a daemon, frame is created _before_ the above hook is setup so
+this wouldn't work. Instead we need to apply the function to whatever frames already exist.
+#+begin_src emacs-lisp
+  (mapc 'gwb/after-frame-set-face (frame-list))
+#+end_src
+
+** Themes
+To switch themes during usage: M-X counsel-load-theme
+I was worreid that using doom-themes would massively slow down startup time, but I guess
+the folks working on Doom are doing a very good job because this is adding only 30ms to load
+time (compared to using whatever emacs' default theme is), which I can live with.
+#+BEGIN_SRC emacs-lisp
+  (use-package doom-themes
+    :init (load-theme 'doom-tomorrow-day t)
+    :config
+    (doom-themes-org-config)              ; font-locks code blocks in org mode
+    )
+#+END_SRC
 
 * Window utilities
 
@@ -227,35 +142,6 @@ Notes:
 #+end_src
 
 ** isearch
-
-#+begin_src emacs-lisp
-  ;;   (defun gwb/region-text ()
-  ;;     (interactive)
-  ;;     (buffer-substring (region-beginning) (region-end)))
-
-  ;;   (defun gwb/isearch-yank-region ()
-  ;;     "Yanks the current active region to the isearch minibuffer.
-  ;;     The point is moved to the beginning of the region at the end of 
-  ;;     the operation, so the first match is always the current region."
-  ;;     (interactive)
-  ;;     (let ((word (gwb/region-text))
-  ;;           (end-word (region-end)))
-  ;;       (deactivate-mark)
-  ;;       (goto-char end-word)
-  ;;       (backward-word)
-  ;;       (isearch-yank-string word)))
-
-  ;;   (defun gwb/isearch-yank-word-at-point ()
-  ;;     "Yanks the word at point to the isearch minibuffer. This is 
-  ;; intended to replace the functionality of `isearch-yank-word-or-char' 
-  ;; mapped to C-s C-w, the behavior of which I don't like."
-  ;;     (interactive)
-  ;;     (let ((word (word-at-point t)))
-  ;;       (forward-word)
-  ;;       (backward-word)
-  ;;       (isearch-yank-string word)))
-
-#+end_src
 
 #+begin_src emacs-lisp
   (use-package isearch
