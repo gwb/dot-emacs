@@ -10,6 +10,7 @@ There are a number of small irritants that need to be fixed:
   (use-package gwb-fix-obsolescence
     :demand t)
 #+end_src
+
 ** Better defaults
    
 #+BEGIN_SRC emacs-lisp
@@ -115,7 +116,8 @@ time (compared to using whatever emacs' default theme is), which I can live with
     )
 #+END_SRC
 
-* Window utilities
+* Navigation: search and windows
+** Window utilities
 
 #+begin_src emacs-lisp
   (use-package ace-window
@@ -128,12 +130,11 @@ time (compared to using whatever emacs' default theme is), which I can live with
        ((t (:foreground "red" :height 3.0))))))
 #+end_src
 
-* Search improvements
-Notes:
-   - You can test regexps interactively using emacs's built-in regexp builder
-     => M-x re-builder
-     
-** Visual Regexp
+** Search improvements
+*** Visual Regexp
+
+Alternatively, you can also test regexps interactively using emacs's built-in
+regexp builder (M-x re-builder)
 #+begin_src emacs-lisp
   (use-package visual-regexp
     :ensure t
@@ -141,7 +142,7 @@ Notes:
            ("C-c q" . 'vr/query-replace)))
 #+end_src
 
-** isearch
+*** isearch
 
 #+begin_src emacs-lisp
   (use-package isearch
@@ -213,7 +214,9 @@ Notes:
     (setq isearch-lax-whitespace t))
 #+end_src
 
-** deadgrep
+*** deadgrep
+I added the option to specify the directory where the search should be performed. If you prefix
+the search command by C-u, you will prompted for a directory.
 #+begin_src emacs-lisp
   (use-package deadgrep
     :demand t
@@ -221,7 +224,7 @@ Notes:
     (defun gwb-deadgrep (search-term)
       (interactive (list (deadgrep--read-search-term)))
       (let ((dir (when current-prefix-arg
-                   (message (read-directory-name "where? "))))
+                   (message (read-directory-name "where? " default-directory))))
             (current-prefix-arg nil)) 
         (deadgrep search-term dir)))
 
@@ -229,49 +232,17 @@ Notes:
     (("M-s g" . gwb-deadgrep)))
 #+end_src
 
-* File navigation
-
+*** Avy
 #+begin_src emacs-lisp
-(setq dired-dwim-target t) ;; dired will try to get target directory when copying, etc... 
+  (use-package avy
+    :bind (("M-j" . avy-goto-char-timer)))
 #+end_src
 
-* Hydra
-This needs to be loaded early
+* Ergonomics
+The following package help with emacs's ergnomics, discoverability, etc..
 
-#+begin_src emacs-lisp
-(use-package hydra
-:ensure t
-:demand t)
-#+end_src
-
-#+begin_src emacs-lisp
-  (add-hook 'org-mode-hook
-            (lambda () 
-              (defhydra hydra-org (org-mode-map "C-.")
-                "Org outline movements"
-                ("s" outline-up-heading "step out")
-                ("k" outline-next-visible-heading "next")    
-                ("j" outline-previous-visible-heading "back")  
-                ("f" org-forward-heading-same-level "next (same level)")
-                ("d" org-backward-heading-same-level "back (same level)")  
-                ("SPC" org-cycle "fold/unfold")
-                ("l" org-metaleft "promote")
-                (";" org-metaright "demote"))))
-
-
-  
-#+end_src
-
-
-TODO: make hydras for manipulating windows
-(e.g. windmove-left, windmove-right, etc... as well as splitting, deleting, etc...)
-
-* which-key
-  Help with keybindings. 
-
-  Usage: type the beginning of a key binding and it will show possible completions 
-         in the minibuffer
-  
+** which-key
+which-key provides key-binding completion in mini buffer.
 #+BEGIN_SRC emacs-lisp
     (use-package which-key
       :ensure t 
@@ -279,28 +250,142 @@ TODO: make hydras for manipulating windows
       (which-key-mode))
 #+END_SRC
 
-* try
-  Allows to try a package without fully installing it.
-  
-  Usage: M-x try
+** vertico
+#+begin_src emacs-lisp
+  (use-package vertico
+    :init
+    (setq completion-in-region-function
+          (lambda (&rest args)
+            (apply (if vertico-mode
+                       #'consult-completion-in-region
+                     #'completion--in-region)
+                   args)))
+    (vertico-mode))
 
-#+BEGIN_SRC emacs-lisp
-  (use-package try
-    :ensure t
-    :commands try
-    )
-#+END_SRC
+    (use-package vertico-directory
+      :after vertico
+      :ensure nil
+      ;; More convenient directory navigation commands
+      :bind (:map vertico-map
+                  ("RET" . vertico-directory-enter)
+                  ("DEL" . vertico-directory-delete-char)
+                  ("M-DEL" . vertico-directory-delete-word))
+      ;; Tidy shadowed file names
+      :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
-* Magit 
+  ;; allows vertico to sort by history position
+  (use-package savehist
+    :init
+    (savehist-mode))
+#+end_src
 
-#+BEGIN_SRC emacs-lisp
-  (use-package magit
-    :ensure t
-    :defer 5
-    :bind ("C-x g" . 'magit-status))
-#+END_SRC
+** orderless
+#+begin_src emacs-lisp
+  (use-package orderless
+    :demand t
+    :custom
+    (setq completion-styles '(orderless basic)
+          completion-category-defaults nil
+          completion-category-overrides '((file (styles partial-completion))
+                                          (symbol (styles
+                                                   ;; orderless-strict-leading-initialism
+                                                   orderless-literal
+                                                   orderless-regexp))))
+    :config
+    (setq completion-styles '(orderless)))
+#+end_src
 
-* Command-log-mode
+** marginalia
+#+begin_src emacs-lisp
+  (use-package marginalia
+    :init
+    (marginalia-mode)
+    :bind
+    (:map minibuffer-local-map
+          ("M-A" . marginalia-cycle)))
+#+end_src
+
+** embark
+#+begin_src emacs-lisp
+  (use-package embark
+    :bind
+    (("C-." . embark-act)
+     ("M-." . embark-dwim)))
+#+end_src
+
+** consult
+#+begin_src emacs-lisp
+  (use-package recentf
+    :commands (recentf-mode
+               recentf-add-file
+               recentf-apply-filename-handlers))
+
+  (use-package consult
+    :config                               ;; or :init?
+    (recentf-mode)
+    :bind
+    (("C-x b" . consult-buffer)
+     ("M-y" . consult-yank-pop)
+     ("M-g g" . consult-goto-line)
+     ("M-g o" . consult-outline)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package embark-consult
+    :after (embark consult))
+#+end_src
+
+** corfu
+#+begin_src emacs-lisp
+  (use-package corfu
+    :init
+    (global-corfu-mode)
+    :custom
+    (corfu-cycle t)
+    :bind
+    (:map corfu-map
+          ("TAB" . corfu-next)
+          ([tab] . corfu-next)
+          ("S-TAB" . corfu-previous)
+          ([backtab] . corfu-previous)))
+#+end_src
+
+** Helpful
+
+#+begin_src emacs-lisp
+(use-package helpful
+  :bind
+  ([remap describe-function] . helpful-callable)
+  ([remap describe-command] . helpful-command)
+  ([remap describe-variable] . helpful-variable)
+  ([remap describe-key] . helpful-key))
+#+end_src
+
+* Minor: useful but less important packages
+** Projectile
+
+#+begin_src emacs-lisp
+      (use-package projectile
+        :ensure t
+        :bind-keymap
+        ("C-c p" . projectile-command-map)
+        :config
+        (projectile-mode +1)
+        )
+    
+#+end_src
+
+** (w) grep 
+
+Make grep buffer writable. Allows one to edit occur buffers by:
+- Running C-x C-q to make occur buffer writable
+- ... making whatever change
+- Running C-x C-s to save changes. The changes will be written in to the source files.
+#+begin_src emacs-lisp
+(use-package wgrep :defer 5)
+#+end_src
+
+** Command-log-mode
 
   Displays all emacs commands used during usage. Useful for debugging and learning.
   
@@ -310,48 +395,31 @@ TODO: make hydras for manipulating windows
 
 #+BEGIN_SRC emacs-lisp
   (use-package command-log-mode
-    :ensure t
     :commands (command-log-mode)
     :bind ("C-c x l" . clm/toggle-command-log-buffer))
 #+END_SRC
 
-* Projectile
-
-** Projectile mode
-
+** Yasnippet
 #+begin_src emacs-lisp
-      (use-package projectile
-        :ensure t
-        :bind-keymap
-        ("C-c p" . projectile-command-map)
-        :config
-        (projectile-mode +1)
-        ;(setq projectile-completion-system 'ivy)
-        )
-    
+  (use-package yasnippet
+    :hook (python-mode . yas-minor-mode))
 #+end_src
 
-** Counsel-projectile
+* Hydra
+This needs to be loaded early
+#+begin_src emacs-lisp
+(use-package hydra
+:ensure t
+:demand t)
+#+end_src
 
-   + Counsel-projectile remaps some of the original projectile functions to 
-     customized `counsel-' functions. The `counsel-' version of projectile-grep 
-     does not work, so I need to make sure the remapping is cancelled (see config).
-     
-     => Two alternatives I've tried (that seem to work). Revert to one of these if issue:
-     
-        - (define-key projectile-mode-map [remap projectile-grep] 'projectile-grep)
-	  
-	  or
+* Magit 
 
-	- (bind-key [remap projectile-grep] 'projectile-grep projectile-mode-map))
-   
 #+BEGIN_SRC emacs-lisp
-  ;; (use-package counsel-projectile
-  ;;   :after (counsel projectile)
-  ;;   :ensure t
-  ;;   :config
-  ;;   (counsel-projectile-mode)
-  ;;   (define-key projectile-mode-map [remap projectile-grep] nil))
+  (use-package magit
+    :ensure t
+    :defer 5
+    :bind ("C-x g" . 'magit-status))
 #+END_SRC
 
 * Org-mode
@@ -468,13 +536,6 @@ TODO: make hydras for manipulating windows
     (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 #+end_src
 
-
-** Babel
-
-#+BEGIN_SRC emacs-lisp
-
-#+END_SRC
-
 * Dired
 
 #+begin_src emacs-lisp
@@ -491,180 +552,9 @@ TODO: make hydras for manipulating windows
             ("." . gwb-dired-kill-hidden))
       :config
       (setq insert-directory-program "gls")
-      (setq dired-listing-switches "-alh --group-directories-first"))
-#+end_src
-* Vertico | Orderless | Consult | Marginalia
-#+begin_src emacs-lisp
-  (use-package vertico
-    :init
-    (setq completion-in-region-function
-          (lambda (&rest args)
-            (apply (if vertico-mode
-                       #'consult-completion-in-region
-                     #'completion--in-region)
-                   args)))
-    (vertico-mode))
-
-    (use-package vertico-directory
-      :after vertico
-      :ensure nil
-      ;; More convenient directory navigation commands
-      :bind (:map vertico-map
-                  ("RET" . vertico-directory-enter)
-                  ("DEL" . vertico-directory-delete-char)
-                  ("M-DEL" . vertico-directory-delete-word))
-      ;; Tidy shadowed file names
-      :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
-
-  ;; allows vertico to sort by history position
-  (use-package savehist
-    :init
-    (savehist-mode))
-
-#+end_src
-
-#+begin_src emacs-lisp
-  (use-package orderless
-    :demand t
-    :custom
-    (setq completion-styles '(orderless basic)
-          completion-category-defaults nil
-          completion-category-overrides '((file (styles partial-completion))
-                                          (symbol (styles
-                                                   ;; orderless-strict-leading-initialism
-                                                   orderless-literal
-                                                   orderless-regexp))))
-    :config
-    (setq completion-styles '(orderless)))
-#+end_src
-
-#+begin_src emacs-lisp
-  (use-package marginalia
-    :init
-    (marginalia-mode)
-    :bind
-    (:map minibuffer-local-map
-          ("M-A" . marginalia-cycle)))
-#+end_src
-
-
-#+begin_src emacs-lisp
-  (use-package embark
-    :bind
-    (("C-." . embark-act)
-     ("M-." . embark-dwim)))
-#+end_src
-
-#+begin_src emacs-lisp
-  (use-package recentf
-    :commands (recentf-mode
-               recentf-add-file
-               recentf-apply-filename-handlers))
-
-  (use-package consult
-    :config                               ;; or :init?
-    (recentf-mode)
-    :bind
-    (("C-x b" . consult-buffer)
-     ("M-y" . consult-yank-pop)
-     ("M-g g" . consult-goto-line)
-     ("M-g o" . consult-outline)))
-
-
-#+end_src
-
-#+begin_src emacs-lisp
-  (use-package embark-consult
-    :after (embark consult))
-#+end_src
-
-#+begin_src emacs-lisp
-  (use-package corfu
-    :init
-    (global-corfu-mode)
-    :custom
-    (corfu-cycle t)
-    :bind
-    (:map corfu-map
-          ("TAB" . corfu-next)
-          ([tab] . corfu-next)
-          ("S-TAB" . corfu-previous)
-          ([backtab] . corfu-previous)))
-#+end_src
-
-* Ivy / counsel
-
-Company does a lot of things:
-
-- It deals with the UI (and presumably backend) of completion in minibuffer
-- It shows completions-at-point in overlays in the buffer (not for all modes)
-
-#+begin_src emacs-lisp
-
-  ;; (use-package gwb-ivy
-  ;; :after counsel
-  ;; :demand t
-  ;; :bind (("M-s z" . gwb-counsel-fzf)))
-
-#+end_src
-
-#+begin_src emacs-lisp
-  ;; (use-package counsel
-  ;;   :after ivy
-  ;;   :ensure t
-  ;;   :demand t
-  ;;   :bind (("M-x" . counsel-M-x)
-  ;;          ("C-x C-f" . counsel-find-file)
-  ;;          ("C-h f" . counsel-describe-function)
-  ;;          ("M-y" . counsel-yank-pop)))
-#+end_src
-
-#+begin_src emacs-lisp
-  ;; (use-package ivy
-  ;;   :ensure t
-  ;;   :demand t
-  ;;   :bind (:map ivy-minibuffer-map
-  ;; 	      ("C-j" . ivy-immediate-done)
-  ;; 	      ("RET" . ivy-alt-done))
-  ;;   :config
-  ;;   (ivy-mode 1)
-  ;;   (setq ivy-initial-inputs-alist nil)
-  ;;   (setq ivy-use-virtual-buffers t)
-  ;;   (setq ivy-count-format "(%d/%d) "))
-#+end_src
-
-#+begin_src emacs-lisp
-  ;; (use-package ivy-rich
-  ;; :ensure t
-  ;; :demand t
-  ;; :init (ivy-rich-mode 1)
-  ;; )
-#+end_src
-
-#+begin_src emacs-lisp
-;(use-package ivy-hydra)
-#+end_src
-
-* (w) grep 
-
-Make grep buffer writable. Allows one to edit occur buffers by:
-- Running C-x C-q to make occur buffer writable
-- ... making whatever change
-- Running C-x C-s to save changes. The changes will be written in to the source files.
-#+begin_src emacs-lisp
-(use-package wgrep :defer 5)
-#+end_src
-
-* Undoo-tree
-
-#+begin_src emacs-lisp
-  (use-package undo-tree
-    :ensure t
-    :config
-    (global-undo-tree-mode)
-    :bind
-    (("C-z" . undo-tree-undo)
-     ("M-z" . undo-tree-redo)))
+      (setq dired-listing-switches "-alh --group-directories-first")
+      (setq dired-dwim-target t) ;; dired will try to gess target directory when copying, etc...
+      )
 #+end_src
 
 * Company
@@ -682,20 +572,6 @@ Make grep buffer writable. Allows one to edit occur buffers by:
       (setq company-idle-delay nil))
 #+end_src
 
-
-In some situations, we don't want to autocomplete (e.g. when trying to
-autocomplete paths with many files
-
-#+begin_src emacs-lisp
-  ;; (setq company-completion-started-hook
-  ;;      (lambda (is-manual)
-  ;;
-  ;;(when (home-dir-path (thing-at-point 'line t))
-  ;;          (message "harshly cancelling completion")
-  ;;          (company-cancel))))
-#+end_src
-
-
 #+begin_src emacs-lisp
   (use-package company-c-headers
     :after (company)
@@ -708,37 +584,6 @@ autocomplete paths with many files
 #+begin_src emacs-lisp
   (use-package gwb-indent
     :after company)
-#+end_src
-
-* Avy
-#+begin_src emacs-lisp
-  (use-package avy
-    :bind (("M-j" . avy-goto-char-timer)))
-#+end_src
-* Helpful
-
-#+begin_src emacs-lisp
-(use-package helpful
-  ;;:custom
-  ;;(counsel-describe-function-function #'helpful-callable)
-  ;;(counsel-describe-variable-function #'helpful-variable)
-  :bind
-  ([remap describe-function] . helpful-callable)
-  ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . helpful-variable)
-  ([remap describe-key] . helpful-key))
-#+end_src
-
-* Yasnippet
-#+begin_src emacs-lisp
-  (use-package yasnippet
-    :hook (python-mode . yas-minor-mode))
-
-  ;; (use-package yasnippet
-  ;;   :ensure t
-  ;;   :disabled t
-  ;;   :init
-  ;;     (yas-global-mode 1))
 #+end_src
 
 * Outlining
@@ -761,7 +606,6 @@ autocomplete paths with many files
                 ("C-M-]" . bicycle-cycle-global)))
 #+end_src
 
-
 * Programming languages
 
 ** Inherited by all
@@ -775,20 +619,16 @@ I have played around, at some point or another, with many programming languages.
 
 #+begin_src emacs-lisp
   (use-package julia-mode
-    :ensure t
     :mode "\\.jl\\'")
 
   (use-package markdown-mode
-    :ensure t
     :mode (("\\.md\\'" . markdown-mode)
            ("\\.Rmd\\'" . markdown-mode)))
 
   (use-package elm-mode
-    :ensure t
     :mode "\\.elm\\'")
 
   (use-package haskell-mode
-    :ensure t
     :mode "\\.hs\\'"
     :hook (haskell-mode . interactive-haskell-mode))
 
@@ -871,16 +711,6 @@ info on how to use gerbil with emacs.
                 ("C-c C-c" . bqn-comint-send-dwim)))
 #+end_src
 
-#+begin_src emacs-lisp
-  ;; (use-package gwb-bqn
-  ;;   :requir
-  ;;   :after bqn-comint-mode
-  ;;   :hook
-  ;;   (bqn-comint-mode-hook . gwb-amend-bqn-comint-mode)
-  ;;   :config
-  ;;   (gwb-amend-bqn-comint-mode))
-#+end_src
-
 ** K
 #+begin_src emacs-lisp
   (use-package k-mode
@@ -897,6 +727,7 @@ info on how to use gerbil with emacs.
    :custom
    (j-console-cmd "jconsole"))
 #+end_src
+
 ** R
 
 ESS is (used to be?) fiddly to setup correctly.
@@ -946,8 +777,6 @@ ESS is (used to be?) fiddly to setup correctly.
 #+end_src
 
 Below are my customizations for ESS. A few comments:
-
-
 
 #+begin_src emacs-lisp
     (use-package gwb-essr
@@ -1019,6 +848,7 @@ Below are my customizations for ESS. A few comments:
     :config
     (add-to-list 'eglot-server-programs '(c++-mode . ("/usr/local/opt/llvm/bin/clangd"))))
 #+end_src
+
 ** Latex
 
 #+begin_src emacs-lisp
@@ -1061,47 +891,6 @@ Below are my customizations for ESS. A few comments:
     (setq font-latex-deactivated-keyword-classes
           '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
     )
-#+end_src
-
-
-#+begin_src emacs-lisp
-  ;; ;; Reftex
-  ;; (require 'reftex)
-  ;; (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
-  ;; (setq reftex-plug-into-AUCTeX t)
-
-  ;; ;; Auxtex
-  ;; (setq TeX-auto-save t)
-  ;; (setq TeX-parse-self t)
-
-  ;; ;; PDF search
-  ;; (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
-  ;; (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
-
-  ;; (setq TeX-PDF-mode t)
-  ;; (when (eq system-type 'darwin)
-  ;;   (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
-  ;;   (setq TeX-view-program-list
-  ;; '(("PDF Viewer" "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")))
-  ;;   )
-
-
-  ;; ;; (use-packag auctex-latexmk) 
-  ;; (require 'auctex-latexmk)
-  ;; (auctex-latexmk-setup)
-  ;; (setq auctex-latexmk-inherit-TeX-PDF-mode t)
-
-  ;; ;; Only change sectioning colour
-  ;; (setq font-latex-fontify-sectioning 'color)
-  ;; ;; super-/sub-script on baseline
-  ;; (setq font-latex-fontify-script nil) ; might not keep this line.. I like smaller {sub/super}scripts
-  ;; (setq font-latex-script-display (quote (nil)))
-  ;; ;; Do not change super-/sub-script font
-
-
-  ;; (setq font-latex-deactivated-keyword-classes
-  ;;     '("italic-command" "bold-command" "italic-declaration" "bold-declaration"))
-
 #+end_src
 
 ** Python
@@ -1301,29 +1090,6 @@ I'm using the following trick:
    You also need to make sure that you've passe the "-i --simple-prompt" arguments to
    python-shell-interpreter-args (as in the above config).
    
-For `elpy-mode`, the config requires a bit more explaining. The Elpy package provides the `elpy-enable' command which provides a wrapper around the `elpy-mode' command which actually activates the minor mode. The minor mode command `elpy-mode` does a few things in its body, including setting up some special configs for `company`. One thing it does, which I don't like, is to setup autocompletion by setting `(setq company-idle-delay 0.1)`. So I'm basically writing as small hook around `elpy-mode` to deactivate auto-complete every time elpy-mode is called.
-
-#+begin_src emacs-lisp
-   (defun gwb-no-company-idle nil
-     (setq company-idle-delay nil))
-
-  ;; (use-package elpy
-  ;;   :init
-  ;;   (elpy-enable))
-
-   ;; (use-package elpy
-   ;;   :hook ((elpy-mode . gwb-no-company-idle)
-   ;;          (python-mode . elpy-enable))
-   ;;   :custom
-   ;;   (elpy-rpc-python-command "python3")
-   ;;   )
-   ;;:init
-   ;;(elpy-enable))
-   ;;(setq python-shell-interpreter-args "-c exec('__import__(\\'readline\\')') -i"))
-#+end_src
-
-
-
 * terminals
 Useful keybindings for terminal:
 - C-c C-k: term-char-mode (can't use usual emacs bindings)
@@ -1334,13 +1100,11 @@ Useful keybindings for terminal:
  
 #+begin_src emacs-lisp
   (use-package term
-    :ensure nil
     :commands term
     :config
     (setq term-prompt-regexp "^[^#$%>\\n]*[#$%>] *"))
 
   (use-package eterm-256color
-    :ensure t
     :hook (term-mode . eterm-256color-mode))
 #+end_src
 
@@ -1360,26 +1124,18 @@ Hugo utilities
     :commands gwb-run-hugo-server) ;; allows to quickly start and kill hugo servers
 #+end_src
 
-
-
 Better Occur behavior
 
 #+begin_src emacs-lisp
   (defun gwb/kill-occur-buffer-window (&rest args)
       (delete-window (get-buffer-window "*Occur*")))
 
-
-  ;; (defun gwb/switch-to-occur-buffer (&rest args)
-  ;;   (select-window (get-buffer-window "*Occur*")))
-
   (defun gwb/switch-to-occur-buffer (&rest args)
     (let ((buffer-window (get-buffer-window "*Occur*")))
       (when buffer-window
         (select-window buffer-window))))
 
-
   (advice-add 'occur-mode-goto-occurrence :after #'gwb/kill-occur-buffer-window)
-
   (advice-add 'occur :after #'gwb/switch-to-occur-buffer)
 
 #+end_src

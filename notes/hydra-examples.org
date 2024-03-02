@@ -1,0 +1,19 @@
+Here are some examples of using hydra, from older configs.
+
+* hydra-org
+I've removed it from my config because, well, I wasn't using it at all.
+#+begin_src emacs-lisp
+  (add-hook 'org-mode-hook
+            (lambda () 
+              (defhydra hydra-org (org-mode-map "C-.")
+                "Org outline movements"
+                ("s" outline-up-heading "step out")
+                ("k" outline-next-visible-heading "next")    
+                ("j" outline-previous-visible-heading "back")  
+                ("f" org-forward-heading-same-level "next (same level)")
+                ("d" org-backward-heading-same-level "back (same level)")  
+                ("SPC" org-cycle "fold/unfold")
+                ("l" org-metaleft "promote")
+                (";" org-metaright "demote"))))
+  
+#+end_src
