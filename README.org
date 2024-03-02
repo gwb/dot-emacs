@@ -926,33 +926,34 @@ I have played around, at some point or another, with many programming languages.
 ** Lisp languages
 
 #+begin_src emacs-lisp
-    (use-package lispy
-      :ensure t
-      :hook ((emacs-lisp-mode . lispy-mode)
-             (scheme-mode . lispy-mode))
-      :bind (:map lispy-mode-map
-                  ("M-o" . nil)))
+      (use-package lispy
+        :ensure t
+        :hook ((emacs-lisp-mode . lispy-mode)
+               (scheme-mode . lispy-mode)
+               (gerbil-mode .lispy-mode))
+        :bind (:map lispy-mode-map
+                    ("M-o" . nil)))
 
-    (use-package racket-mode 
-      :ensure t
-      :mode "\\.rkt\\'"
-      :config
-      (setq tab-always-indent 'complete)
-      (require 'racket-xp)
-      (add-hook 'racket-mode-hook #'racket-xp-mode))
+      (use-package racket-mode 
+        :ensure t
+        :mode "\\.rkt\\'"
+        :config
+        (setq tab-always-indent 'complete)
+        (require 'racket-xp)
+        (add-hook 'racket-mode-hook #'racket-xp-mode))
 
-    (use-package slime
-      :commands slime
-      :init
-      (setq inferior-lisp-program "sbcl")
-      :config
-      (load (expand-file-name "~/.quicklisp/slime-helper.el")))
+      (use-package slime
+        :commands slime
+        :init
+        (setq inferior-lisp-program "sbcl")
+        :config
+        (load (expand-file-name "~/.quicklisp/slime-helper.el")))
 
-    (use-package emacs-lisp-mode
-      :hook (emacs-lisp-mode . hs-minor-mode)
-      :bind (:map emacs-lisp-mode-map
-                  ("M-[" . hs-hide-all)
-                  ("M-]" . hs-show-all)))
+      (use-package emacs-lisp-mode
+        :hook (emacs-lisp-mode . hs-minor-mode)
+        :bind (:map emacs-lisp-mode-map
+                    ("M-[" . hs-hide-all)
+                    ("M-]" . hs-show-all)))
 #+end_src
 
 *** Gerbil
