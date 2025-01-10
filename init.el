@@ -49,7 +49,7 @@
 ;; loads config
 (require 'gwb-load-utils)
 ;; (gwb-babel-load-file (expand-file-name "README.org"))
-(gwb-babel-load-file (expand-file-name "~/.emacs.default/README.org"))
+(gwb-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
 ;; (org-babel-load-file (expand-file-name "~/.emacs.d/README.org"))
 ;; (load-file "~/.emacs.d/README.elc")
 

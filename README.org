@@ -110,6 +110,7 @@ the folks working on Doom are doing a very good job because this is adding only 
 time (compared to using whatever emacs' default theme is), which I can live with.
 #+BEGIN_SRC emacs-lisp
   (use-package doom-themes
+    :ensure t
     :init (load-theme 'doom-tomorrow-day t)
     :config
     (doom-themes-org-config)              ; font-locks code blocks in org mode
@@ -219,14 +220,15 @@ I added the option to specify the directory where the search should be performed
 the search command by C-u, you will prompted for a directory.
 #+begin_src emacs-lisp
   (use-package deadgrep
+    :ensure t
     :demand t
     :init
     (defun gwb-deadgrep (search-term)
       (interactive (list (deadgrep--read-search-term)))
       (let ((dir (when current-prefix-arg
-                   (message (read-directory-name "where? " default-directory))))
-            (current-prefix-arg nil)) 
-        (deadgrep search-term dir)))
+		   (message (read-directory-name "where? " default-directory))))
+	    (current-prefix-arg nil)) 
+	(deadgrep search-term dir)))
 
     :bind
     (("M-s g" . gwb-deadgrep)))
@@ -235,6 +237,7 @@ the search command by C-u, you will prompted for a directory.
 *** Avy
 #+begin_src emacs-lisp
   (use-package avy
+    :ensure t
     :bind (("M-j" . avy-goto-char-timer)))
 #+end_src
 
@@ -253,13 +256,14 @@ which-key provides key-binding completion in mini buffer.
 ** vertico
 #+begin_src emacs-lisp
   (use-package vertico
+    :ensure t
     :init
     (setq completion-in-region-function
-          (lambda (&rest args)
-            (apply (if vertico-mode
-                       #'consult-completion-in-region
-                     #'completion--in-region)
-                   args)))
+	  (lambda (&rest args)
+	    (apply (if vertico-mode
+		       #'consult-completion-in-region
+		     #'completion--in-region)
+		   args)))
     (vertico-mode))
 
     (use-package vertico-directory
@@ -267,9 +271,9 @@ which-key provides key-binding completion in mini buffer.
       :ensure nil
       ;; More convenient directory navigation commands
       :bind (:map vertico-map
-                  ("RET" . vertico-directory-enter)
-                  ("DEL" . vertico-directory-delete-char)
-                  ("M-DEL" . vertico-directory-delete-word))
+		  ("RET" . vertico-directory-enter)
+		  ("DEL" . vertico-directory-delete-char)
+		  ("M-DEL" . vertico-directory-delete-word))
       ;; Tidy shadowed file names
       :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
@@ -282,15 +286,16 @@ which-key provides key-binding completion in mini buffer.
 ** orderless
 #+begin_src emacs-lisp
   (use-package orderless
+    :ensure t
     :demand t
     :custom
     (setq completion-styles '(orderless basic)
-          completion-category-defaults nil
-          completion-category-overrides '((file (styles partial-completion))
-                                          (symbol (styles
-                                                   ;; orderless-strict-leading-initialism
-                                                   orderless-literal
-                                                   orderless-regexp))))
+	  completion-category-defaults nil
+	  completion-category-overrides '((file (styles partial-completion))
+					  (symbol (styles
+						   ;; orderless-strict-leading-initialism
+						   orderless-literal
+						   orderless-regexp))))
     :config
     (setq completion-styles '(orderless)))
 #+end_src
@@ -298,16 +303,18 @@ which-key provides key-binding completion in mini buffer.
 ** marginalia
 #+begin_src emacs-lisp
   (use-package marginalia
+    :ensure t
     :init
     (marginalia-mode)
     :bind
     (:map minibuffer-local-map
-          ("M-A" . marginalia-cycle)))
+	  ("M-A" . marginalia-cycle)))
 #+end_src
 
 ** embark
 #+begin_src emacs-lisp
   (use-package embark
+    :ensure t
     :bind
     (("C-." . embark-act)
      ("M-." . embark-dwim)))
@@ -317,10 +324,11 @@ which-key provides key-binding completion in mini buffer.
 #+begin_src emacs-lisp
   (use-package recentf
     :commands (recentf-mode
-               recentf-add-file
-               recentf-apply-filename-handlers))
+	       recentf-add-file
+	       recentf-apply-filename-handlers))
 
   (use-package consult
+    :ensure t
     :config                               ;; or :init?
     (recentf-mode)
     :bind
@@ -332,33 +340,36 @@ which-key provides key-binding completion in mini buffer.
 
 #+begin_src emacs-lisp
   (use-package embark-consult
+    :ensure t
     :after (embark consult))
 #+end_src
 
 ** corfu
 #+begin_src emacs-lisp
   (use-package corfu
+    :ensure t
     :init
     (global-corfu-mode)
     :custom
     (corfu-cycle t)
     :bind
     (:map corfu-map
-          ("TAB" . corfu-next)
-          ([tab] . corfu-next)
-          ("S-TAB" . corfu-previous)
-          ([backtab] . corfu-previous)))
+	  ("TAB" . corfu-next)
+	  ([tab] . corfu-next)
+	  ("S-TAB" . corfu-previous)
+	  ([backtab] . corfu-previous)))
 #+end_src
 
 ** Helpful
 
 #+begin_src emacs-lisp
-(use-package helpful
-  :bind
-  ([remap describe-function] . helpful-callable)
-  ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . helpful-variable)
-  ([remap describe-key] . helpful-key))
+  (use-package helpful
+    :ensure t
+    :bind
+    ([remap describe-function] . helpful-callable)
+    ([remap describe-command] . helpful-command)
+    ([remap describe-variable] . helpful-variable)
+    ([remap describe-key] . helpful-key))
 #+end_src
 
 * Minor: useful but less important packages
@@ -382,7 +393,7 @@ Make grep buffer writable. Allows one to edit occur buffers by:
 - ... making whatever change
 - Running C-x C-s to save changes. The changes will be written in to the source files.
 #+begin_src emacs-lisp
-(use-package wgrep :defer 5)
+(use-package wgrep :ensure t :defer 5)
 #+end_src
 
 ** Command-log-mode
@@ -395,6 +406,7 @@ Make grep buffer writable. Allows one to edit occur buffers by:
 
 #+BEGIN_SRC emacs-lisp
   (use-package command-log-mode
+    :ensure t
     :commands (command-log-mode)
     :bind ("C-c x l" . clm/toggle-command-log-buffer))
 #+END_SRC
@@ -402,6 +414,7 @@ Make grep buffer writable. Allows one to edit occur buffers by:
 ** Yasnippet
 #+begin_src emacs-lisp
   (use-package yasnippet
+    :ensure t
     :hook (python-mode . yas-minor-mode))
 #+end_src
 
@@ -560,20 +573,22 @@ This needs to be loaded early
 * Company
 
 #+begin_src emacs-lisp
-    (use-package company
-      :hook ((c-mode . company-mode)
-             ;(ess-r-mode . company-mode)
-             ;(inferior-ess-r-mode . company-mode)
-             )
-      :bind (:map company-active-map
-                  ("C-n" . company-select-next-or-abort)
-                  ("C-p" . company-select-previous-or-abort))
-      :config
-      (setq company-idle-delay nil))
+  (use-package company
+    :ensure t
+    :hook ((c-mode . company-mode)
+	   ;(ess-r-mode . company-mode)
+	   ;(inferior-ess-r-mode . company-mode)
+	   )
+    :bind (:map company-active-map
+		("C-n" . company-select-next-or-abort)
+		("C-p" . company-select-previous-or-abort))
+    :config
+    (setq company-idle-delay nil))
 #+end_src
 
 #+begin_src emacs-lisp
   (use-package company-c-headers
+    :ensure t
     :after (company)
     :config
     (add-to-list 'company-backends 'company-c-headers)
@@ -600,10 +615,11 @@ This needs to be loaded early
 
 #+begin_src emacs-lisp
   (use-package bicycle
+    :ensure t
     :after outline
     :bind (:map outline-minor-mode-map
-                ("M-S-]" . bicycle-cycle)
-                ("C-M-]" . bicycle-cycle-global)))
+		("M-S-]" . bicycle-cycle)
+		("C-M-]" . bicycle-cycle-global)))
 #+end_src
 
 * Programming languages
@@ -612,27 +628,40 @@ This needs to be loaded early
   (add-hook 'prog-mode-hook #'(lambda () (setq-local tab-always-indent 'complete)))
 #+end_src
 
+
+#+begin_src emacs-lisp
+  (use-package eglot
+    :ensure t
+    :config
+    (add-to-list 'eglot-server-programs
+                 '((rust-ts-mode rust-mode) .
+                   ("rust-analyzer" :initializationOptions (:check (:command "clippy")))))
+    )
+#+end_src
+
 ** Misc languages
 
 I have played around, at some point or another, with many programming languages. This section deals with the languages for which the config is minimal (or non-existent). 
 
 #+begin_src emacs-lisp
-  (use-package julia-mode
-    :mode "\\.jl\\'")
+  ;; (use-package julia-mode
+  ;;   :mode "\\.jl\\'")
 
   (use-package markdown-mode
+    :ensure t
     :mode (("\\.md\\'" . markdown-mode)
            ("\\.Rmd\\'" . markdown-mode)))
 
-  (use-package elm-mode
-    :mode "\\.elm\\'")
+  ;; (use-package elm-mode
+  ;;   :mode "\\.elm\\'")
 
-  (use-package haskell-mode
-    :mode "\\.hs\\'"
-    :hook (haskell-mode . interactive-haskell-mode))
+  ;; (use-package haskell-mode
+  ;;   :mode "\\.hs\\'"
+  ;;   :hook (haskell-mode . interactive-haskell-mode))
 
   (use-package rust-mode
     :mode "\\.rs\\'"
+    :hook (rust-mode . eglot-ensure)
     :init
     (add-hook 'rust-mode (lambda () (setq indent-tabs-mode nil))))
 #+end_src
@@ -640,34 +669,52 @@ I have played around, at some point or another, with many programming languages.
 ** Lisp languages
 
 #+begin_src emacs-lisp
-      (use-package lispy
-        :ensure t
-        :hook ((emacs-lisp-mode . lispy-mode)
-               (scheme-mode . lispy-mode)
-               (gerbil-mode .lispy-mode))
-        :bind (:map lispy-mode-map
-                    ("M-o" . nil)))
+    (use-package lispy
+      :ensure t
+      :hook ((emacs-lisp-mode . lispy-mode)
+             (scheme-mode . lispy-mode)
+             (gerbil-mode .lispy-mode))
+      :bind (:map lispy-mode-map
+                  ("M-o" . nil)))
 
-      (use-package racket-mode 
-        :ensure t
-        :mode "\\.rkt\\'"
-        :config
-        (setq tab-always-indent 'complete)
-        (require 'racket-xp)
-        (add-hook 'racket-mode-hook #'racket-xp-mode))
+    ;; (use-package racket-mode 
+    ;;   :ensure t
+    ;;   :mode "\\.rkt\\'"
+    ;;   :config
+    ;;   (setq tab-always-indent 'complete)
+    ;;   (require 'racket-xp)
+    ;;   (add-hook 'racket-mode-hook #'racket-xp-mode))
 
-      (use-package slime
-        :commands slime
-        :init
-        (setq inferior-lisp-program "sbcl")
-        :config
-        (load (expand-file-name "~/.quicklisp/slime-helper.el")))
+    (use-package slime
+      :commands slime
+      :init
+      (setq  slime-lisp-modes nil)
+      (setq inferior-lisp-program "sbcl")
+      :config
+      (remove-hook 'lisp-mode-hook 'slime-lisp-mode-hook)
+      (load (expand-file-name "~/quicklisp/slime-helper.el"))
+      )
 
-      (use-package emacs-lisp-mode
-        :hook (emacs-lisp-mode . hs-minor-mode)
-        :bind (:map emacs-lisp-mode-map
-                    ("M-[" . hs-hide-all)
-                    ("M-]" . hs-show-all)))
+  (use-package sly
+    :commands sly
+    :init
+    (setq inferior-lisp-program "sbcl")
+    :config
+    (setq lispy-use-sly t)
+    )
+
+    (use-package emacs-lisp-mode
+      :hook (emacs-lisp-mode . hs-minor-mode)
+      :bind (:map emacs-lisp-mode-map
+                  ("M-[" . hs-hide-all)
+                  ("M-]" . hs-show-all)))
+
+#+end_src
+
+*** common lisp
+#+begin_src emacs-lisp
+  (use-package lisp-mode
+    :hook (lisp-mode . lispy-mode))
 #+end_src
 
 *** Gerbil
@@ -706,11 +753,12 @@ info on how to use gerbil with emacs.
 ** BQN
 #+begin_src emacs-lisp
   (use-package bqn-mode
+    :ensure t
     :init (require 'gwb-bqn)
     :commands (bqn-comint-buffer)
     :config (add-hook 'bqn-comint-mode-hook #'gwb-amend-bqn-comint-mode)
     :bind (:map bqn-mode-map
-                ("C-c C-c" . bqn-comint-send-dwim)))
+		("C-c C-c" . bqn-comint-send-dwim)))
 #+end_src
 
 ** K
@@ -726,6 +774,7 @@ info on how to use gerbil with emacs.
 ** J
 #+begin_src emacs-lisp
   (use-package j-mode
+   :ensure t
    :custom
    (j-console-cmd "jconsole"))
 #+end_src
@@ -754,26 +803,27 @@ ESS is (used to be?) fiddly to setup correctly.
 
 
 #+begin_src emacs-lisp
-        (use-package ess
-          :defer t)
+  (use-package ess
+    :ensure t
+    :defer t)
 
-        (use-package ess-r-mode
-          :hook
-          ((ess-r-mode . hs-minor-mode)
-           (ess-r-mode . outline-minor-mode))
-          :bind
-          (:map
-           ess-r-mode-map
-           ;("TAB" . gwb-indent-for-tab-command)
-           ("_" . ess-insert-assign)
-           ("M-[" . hs-hide-all)
-           ("M-]" . hs-show-all)
-           :map
-           inferior-ess-r-mode-map
-           ;("TAB" . gwb-indent-for-tab-command)
-           ("_" . ess-insert-assign)
-           ("M-[" . hs-hide-all)
-           ("M-]" . hs-show-all)))
+  (use-package ess-r-mode
+    :hook
+    ((ess-r-mode . hs-minor-mode)
+     (ess-r-mode . outline-minor-mode))
+    :bind
+    (:map
+     ess-r-mode-map
+     ;("TAB" . gwb-indent-for-tab-command)
+     ("_" . ess-insert-assign)
+     ("M-[" . hs-hide-all)
+     ("M-]" . hs-show-all)
+     :map
+     inferior-ess-r-mode-map
+     ;("TAB" . gwb-indent-for-tab-command)
+     ("_" . ess-insert-assign)
+     ("M-[" . hs-hide-all)
+     ("M-]" . hs-show-all)))
 
 
 #+end_src
@@ -845,12 +895,16 @@ Below are my customizations for ESS. A few comments:
   (use-package c++-mode
     :hook ((c++-mode . eglot-ensure)))
 
-  (use-package eglot
-    :defer t
-    :config
-    (add-to-list 'eglot-server-programs '(c++-mode . ("/usr/local/opt/llvm/bin/clangd"))))
+  ;; (use-package eglot
+  ;;   :defer t
+  ;;   :config
+  ;;   (add-to-list 'eglot-server-programs '(c++-mode . ("/usr/local/opt/llvm/bin/clangd"))))
 #+end_src
 
+** Zig
+#+begin_src emacs-lisp
+  (use-package zig-mode :ensure t)
+#+end_src
 ** Latex
 
 #+begin_src emacs-lisp
@@ -992,13 +1046,14 @@ As described above, some additional packages, modules must exist for my config t
 - [pip install] jedi 
 
 #+begin_src emacs-lisp
-  (use-package lsp-mode
-    :defer t                   ; ok to defer, will be loaded when needed
-    :config
-    ;; the pyright server has higher precedence than pylsp so need to disable it so
-    ;; lsp uses pylsp
-    ;; (setq lsp-clangd-binary-path "/usr/local/opt/llvm/bin/clangd")
-    (setq lsp-disabled-clients (cons 'pyright lsp-disabled-clients)))
+  ;; (use-package lsp-mode
+  ;;   :ensure t
+  ;;   :defer t                   ; ok to defer, will be loaded when needed
+  ;;   :config
+  ;;   ;; the pyright server has higher precedence than pylsp so need to disable it so
+  ;;   ;; lsp uses pylsp
+  ;;   ;; (setq lsp-clangd-binary-path "/usr/local/opt/llvm/bin/clangd")
+  ;;   (setq lsp-disabled-clients (cons 'pyright lsp-disabled-clients)))
 #+end_src
 
 Additional notes on lsp-mode:
@@ -1019,13 +1074,13 @@ A note about completion: it works by adding its own backend in the list of `comp
     :ensure nil
     :mode ("\\.py\\'" . python-mode)
     :interpreter ("python" "python3")
-    :hook
-    (python-mode . (lambda ()
-                                          ;(require 'lsp-pyright)
-                     (lsp)))
-                                          ;:bind
-                                          ;(:map python-mode-map
-                                          ;      ("TAB" . gwb-indent-for-tab-command))
+    ;;:hook
+    ;; (python-mode . (lambda ()
+    ;;                                       ;(require 'lsp-pyright)
+    ;;                  (lsp)))
+    ;;                                       ;:bind
+    ;;                                       ;(:map python-mode-map
+    ;;                                       ;      ("TAB" . gwb-indent-for-tab-command))
     :config
     ;; => uncomment two below
     (setq python-shell-interpreter "ipython3")
@@ -1204,7 +1259,7 @@ Note: interestingly, CMD + SHIFT is mapped to super (s). e.g. CMD+SHIFT+SPC maps
   (defun gwb/edit-config ()
     "edits README.org"
     (interactive)
-    (find-file "~/.emacs.default/README.org"))
+    (find-file "~/.emacs.d/README.org"))
 
 
   (defun gwb/copy-to-osx (start end)

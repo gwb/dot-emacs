@@ -3,8 +3,9 @@
 (defun gwb-babel-load-file (file)
   "Logic partly lifted from `org-babel-load-file`"
   (let ((tangled-file (concat (file-name-sans-extension file) ".el")))
-    (when (and (file-exists-p tangled-file)
-               (file-newer-than-file-p file tangled-file))
+    (when (or (not (file-exists-p tangled-file))
+	      (and (file-exists-p tangled-file)
+		   (file-newer-than-file-p file tangled-file)))
       
       ;; org file newer than .el => we tangle
       (require 'org)
